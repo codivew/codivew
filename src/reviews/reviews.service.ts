@@ -48,7 +48,7 @@ export class ReviewsService {
     let result: ReviewResult;
     try {
       const response = await this.ollama.generateReview(this.prompt.build(dto, filtered));
-      result = parseReviewResult(response, filtered.reviewedFiles);
+      result = parseReviewResult(response, filtered.reviewedFiles, filtered.diff);
     } catch (error) {
       if (!(error instanceof ZodError) && !this.isModelInvalid(error)) throw error;
       const reason = this.validationReason(error);
@@ -56,7 +56,7 @@ export class ReviewsService {
         const response = await this.ollama.generateReview(
           this.prompt.buildRetry(dto, filtered, reason),
         );
-        result = parseReviewResult(response, filtered.reviewedFiles);
+        result = parseReviewResult(response, filtered.reviewedFiles, filtered.diff);
       } catch (retryError) {
         if (!(retryError instanceof ZodError) && !this.isModelInvalid(retryError)) throw retryError;
         throw new ApiException(

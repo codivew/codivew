@@ -29,6 +29,7 @@ describe('HtmlRendererService', () => {
             severity: 'should_fix',
             confidence: 0.8,
             file: 'src/app.ts',
+            line: 1,
             title: '제목',
             description: '설명',
             codeSnippet: '<script>bad()</script>',
@@ -116,5 +117,7 @@ describe('HtmlRendererService', () => {
     expect(html).toContain('class="deletion"');
     expect(html).toContain('class="inline-feedback"');
     expect(html).toContain('href="#feedback-0"');
+    expect(html).toContain('<col class="line-col"><col class="line-col"><col class="sign-col">');
+    expect(html).toContain('class="overview-layout"');
   });
 });

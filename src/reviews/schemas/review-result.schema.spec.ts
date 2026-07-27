@@ -28,6 +28,38 @@ describe('reviewResultSchema', () => {
     expect(parseReviewResult(valid, ['src/app.ts']).issues).toHaveLength(1);
   });
 
+  it('requires a line in the Ollama response schema', () => {
+    expect(reviewResultJsonSchema.properties.issues.items.required).toContain('line');
+  });
+
+  it('normalizes verdicts to match reported issues', () => {
+    expect(parseReviewResult({ ...valid, verdict: 'approve' }, ['src/app.ts']).verdict).toBe(
+      'comment',
+    );
+    expect(
+      parseReviewResult(
+        {
+          ...valid,
+          verdict: 'approve',
+          issues: [{ ...valid.issues[0], severity: 'must_fix' }],
+        },
+        ['src/app.ts'],
+      ).verdict,
+    ).toBe('request_changes');
+  });
+
+  it('rejects a line outside the new side of the diff', () => {
+    const diff = `diff --git a/src/app.ts b/src/app.ts
+--- a/src/app.ts
++++ b/src/app.ts
+@@ -1 +1 @@
+-old
++new`;
+    expect(() => parseReviewResult(valid, ['src/app.ts'], diff)).toThrow(
+      'line must exist on the new side of the reviewed diff',
+    );
+  });
+
   it.each([
     [{ ...valid.issues[0], confidence: 2 }],
     [{ ...valid.issues[0], title: '' }],

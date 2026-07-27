@@ -6,7 +6,7 @@ export type ReviewIssue = {
   severity: ReviewSeverity;
   confidence: number;
   file: string;
-  line?: number;
+  line: number;
   endLine?: number;
   title: string;
   description: string;

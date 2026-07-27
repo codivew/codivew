@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { ReviewResult } from '../types/review-result';
+import { parseUnifiedDiff } from '../unified-diff';
 
 const positiveLine = z.number().int().positive();
 
@@ -8,7 +9,7 @@ export const reviewIssueSchema = z
     severity: z.enum(['must_fix', 'should_fix', 'suggestion']),
     confidence: z.number().min(0).max(1),
     file: z.string().min(1).max(500),
-    line: positiveLine.optional(),
+    line: positiveLine,
     endLine: positiveLine.optional(),
     title: z.string().min(1).max(300),
     description: z.string().min(1).max(5000),
@@ -18,14 +19,7 @@ export const reviewIssueSchema = z
   })
   .strict()
   .superRefine((issue, context) => {
-    if (issue.endLine !== undefined && issue.line === undefined) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['endLine'],
-        message: 'line is required',
-      });
-    }
-    if (issue.line !== undefined && issue.endLine !== undefined && issue.endLine < issue.line) {
+    if (issue.endLine !== undefined && issue.endLine < issue.line) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['endLine'],
@@ -57,7 +51,7 @@ export const reviewResultJsonSchema = {
       items: {
         type: 'object',
         additionalProperties: false,
-        required: ['severity', 'confidence', 'file', 'title', 'description'],
+        required: ['severity', 'confidence', 'file', 'line', 'title', 'description'],
         properties: {
           severity: { type: 'string', enum: ['must_fix', 'should_fix', 'suggestion'] },
           confidence: { type: 'number' },
@@ -76,11 +70,25 @@ export const reviewResultJsonSchema = {
   },
 } as const;
 
-export function parseReviewResult(input: unknown, reviewedFiles: readonly string[]): ReviewResult {
+export function parseReviewResult(
+  input: unknown,
+  reviewedFiles: readonly string[],
+  diff?: string,
+): ReviewResult {
   const result = reviewResultSchema.parse(input);
   const files = new Set(reviewedFiles);
+  const linesByFile =
+    diff === undefined
+      ? undefined
+      : new Map(
+          parseUnifiedDiff(diff).map((file) => [
+            file.path,
+            new Set(file.hunks.flatMap((hunk) => hunk.lines.flatMap((line) => line.newLine ?? []))),
+          ]),
+        );
   for (const [index, issue] of result.issues.entries()) {
-    if (!files.has(issue.file.replaceAll('\\', '/'))) {
+    const normalizedFile = issue.file.replaceAll('\\', '/');
+    if (!files.has(normalizedFile)) {
       throw new z.ZodError([
         {
           code: z.ZodIssueCode.custom,
@@ -89,6 +97,21 @@ export function parseReviewResult(input: unknown, reviewedFiles: readonly string
         },
       ]);
     }
+    if (linesByFile !== undefined && !linesByFile.get(normalizedFile)?.has(issue.line)) {
+      throw new z.ZodError([
+        {
+          code: z.ZodIssueCode.custom,
+          path: ['issues', index, 'line'],
+          message: 'line must exist on the new side of the reviewed diff',
+        },
+      ]);
+    }
+  }
+  if (result.issues.some((issue) => issue.severity === 'must_fix')) {
+    return { ...result, verdict: 'request_changes' };
+  }
+  if (result.issues.length > 0 && result.verdict === 'approve') {
+    return { ...result, verdict: 'comment' };
   }
   return result;
 }
