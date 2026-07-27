@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiException } from '../common/errors/api-exception';
 import { OllamaService } from './ollama.service';
@@ -14,6 +15,7 @@ describe('OllamaService', () => {
   afterEach(() => {
     global.fetch = originalFetch;
     jest.useRealTimers();
+    jest.restoreAllMocks();
   });
 
   it('returns parsed structured content', async () => {
@@ -43,6 +45,22 @@ describe('OllamaService', () => {
       await expect(service.generateReview(prompts)).rejects.toBeInstanceOf(ApiException);
     },
   );
+
+  it('logs safe status metadata for an HTTP failure', async () => {
+    const warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation();
+    global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 502 });
+
+    await expect(service.generateReview(prompts)).rejects.toBeInstanceOf(ApiException);
+
+    expect(warn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'ollama_request_failed',
+        reason: 'http_error',
+        model: 'qwen',
+        statusCode: 502,
+      }),
+    );
+  });
 
   it('aborts a timed-out request', async () => {
     global.fetch = jest.fn(

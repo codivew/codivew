@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { randomBytes } from 'node:crypto';
 import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ZodError } from 'zod';
@@ -15,8 +15,6 @@ import type { ReviewResult } from './types/review-result';
 
 export type GeneratedReview = {
   reviewId: string;
-  filename: string;
-  html: string;
   verdict: ReviewResult['verdict'];
   issueCount: number;
   publicUrl: string;
@@ -37,7 +35,7 @@ export class ReviewsService {
 
   async createReview(dto: CreateReviewDto): Promise<GeneratedReview> {
     const startedAt = Date.now();
-    const reviewId = randomUUID();
+    const reviewId = randomBytes(9).toString('base64url');
     const filtered = this.diffFilter.filter(dto.diff);
     if (filtered.filteredCharCount > this.config.getOrThrow<number>('review.maxDiffChars')) {
       throw new ApiException(
@@ -70,8 +68,7 @@ export class ReviewsService {
     }
 
     const elapsedMs = Date.now() - startedAt;
-    const filename = `${reviewId}.html`;
-    const publicUrl = `${this.config.getOrThrow<string>('app.publicUrl')}/${filename}`;
+    const publicUrl = `${this.config.getOrThrow<string>('app.publicUrl')}/${reviewId}`;
     const html = this.renderer.render({
       reviewId,
       createdAt: new Date(),
@@ -98,8 +95,6 @@ export class ReviewsService {
     });
     return {
       reviewId,
-      filename,
-      html,
       verdict: result.verdict,
       issueCount: result.issues.length,
       publicUrl,

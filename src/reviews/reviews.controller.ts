@@ -30,7 +30,7 @@ export class ReviewsController {
     description: '생성된 HTML 코드 리뷰 보고서의 공개 URL',
     schema: {
       type: 'string',
-      example: 'https://reviews.example.com/api/reviews/550e8400-e29b-41d4-a716-446655440000.html',
+      example: 'https://reviews.example.com/result/K4n2sP9_xQ7m',
     },
   })
   @ApiUnauthorizedResponse({ description: 'Bearer 토큰 인증 실패' })

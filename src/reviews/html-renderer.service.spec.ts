@@ -10,7 +10,7 @@ describe('HtmlRendererService', () => {
       createdAt: new Date('2026-01-01T00:00:00Z'),
       elapsedMs: 42,
       model: 'qwen',
-      publicUrl: 'https://reviews.test/api/reviews/report.html',
+      publicUrl: 'https://reviews.test/result/report-id',
       request: { repository: '<script>alert(1)</script>', mode: ReviewMode.STAGED, diff: 'x' },
       filtered: {
         diff: 'x',
@@ -51,7 +51,7 @@ describe('HtmlRendererService', () => {
       createdAt: new Date(0),
       elapsedMs: 0,
       model: 'model',
-      publicUrl: 'https://reviews.test/api/reviews/id.html',
+      publicUrl: 'https://reviews.test/result/test-id',
       request: { repository: 'repo', mode: ReviewMode.WORKING, diff: 'x' },
       filtered: {
         diff: 'x',

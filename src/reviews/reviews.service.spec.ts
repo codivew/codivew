@@ -24,7 +24,7 @@ describe('ReviewsService', () => {
     new ReviewsService(
       new ConfigService({
         review: { maxDiffChars, resultTtlMs: 86_400_000 },
-        app: { publicUrl: 'https://reviews.test/api/reviews' },
+        app: { publicUrl: 'https://reviews.test/result' },
       }),
       new DiffFilterService(),
       new ReviewPromptService(),
@@ -35,14 +35,11 @@ describe('ReviewsService', () => {
 
   beforeEach(() => jest.clearAllMocks());
 
-  it('generates a UUID HTML review', async () => {
+  it('generates a short public review URL', async () => {
     ollama.generateReview.mockResolvedValue(valid);
     const result = await create().createReview(dto);
-    expect(result.filename).toMatch(/^[0-9a-f-]{36}\.html$/);
-    expect(result.html).toBe('<html></html>');
-    expect(result.publicUrl).toMatch(
-      /^https:\/\/reviews\.test\/api\/reviews\/[0-9a-f-]{36}\.html$/,
-    );
+    expect(result.reviewId).toMatch(/^[A-Za-z0-9_-]{12}$/);
+    expect(result.publicUrl).toMatch(/^https:\/\/reviews\.test\/result\/[A-Za-z0-9_-]{12}$/);
     expect(renderer.render).toHaveBeenCalledTimes(1);
   });
 

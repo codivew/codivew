@@ -1,4 +1,4 @@
-import { parseReviewResult } from './review-result.schema';
+import { parseReviewResult, reviewResultJsonSchema } from './review-result.schema';
 
 const valid = {
   verdict: 'comment',
@@ -19,6 +19,11 @@ const valid = {
 };
 
 describe('reviewResultSchema', () => {
+  it('keeps Ollama format schema free of unsupported constraint keywords', () => {
+    const schema = JSON.stringify(reviewResultJsonSchema);
+    expect(schema).not.toMatch(/"(?:minimum|maximum|minLength|maxLength|maxItems)"/);
+  });
+
   it('accepts a valid result', () => {
     expect(parseReviewResult(valid, ['src/app.ts']).issues).toHaveLength(1);
   });

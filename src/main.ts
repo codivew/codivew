@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { ValidationPipe } from '@nestjs/common';
+import { RequestMethod, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { AppModule } from './app.module';
@@ -14,7 +14,9 @@ async function bootstrap(): Promise<void> {
     AppModule,
     new FastifyAdapter({ bodyLimit: environment.REVIEW_BODY_LIMIT_BYTES }),
   );
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix('api', {
+    exclude: [{ path: 'result/:reviewId', method: RequestMethod.GET }],
+  });
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
   );

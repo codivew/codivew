@@ -1,4 +1,4 @@
-import { HttpStatus, ValidationPipe } from '@nestjs/common';
+import { HttpStatus, RequestMethod, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { AppModule } from '../src/app.module';
@@ -32,7 +32,7 @@ describe('Review API (e2e)', () => {
   beforeAll(async () => {
     process.env.NODE_ENV = 'test';
     process.env.REVIEW_API_TOKEN = 'test-token';
-    process.env.PUBLIC_URL = 'https://reviews.test/api/reviews';
+    process.env.PUBLIC_URL = 'https://reviews.test/result';
     process.env.REVIEW_MAX_DIFF_CHARS = '120';
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(OllamaService)
@@ -41,7 +41,9 @@ describe('Review API (e2e)', () => {
     app = moduleRef.createNestApplication<NestFastifyApplication>(
       new FastifyAdapter({ bodyLimit: 2048 }),
     );
-    app.setGlobalPrefix('api');
+    app.setGlobalPrefix('api', {
+      exclude: [{ path: 'result/:reviewId', method: RequestMethod.GET }],
+    });
     app.useGlobalPipes(
       new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
     );
@@ -68,15 +70,15 @@ describe('Review API (e2e)', () => {
     expect(response.statusCode).toBe(201);
     expect(response.headers['content-type']).toContain('text/plain');
     const reviewId = response.headers['x-review-id'];
-    expect(reviewId).toMatch(/^[0-9a-f-]{36}$/);
+    expect(reviewId).toMatch(/^[A-Za-z0-9_-]{12}$/);
     if (typeof reviewId !== 'string') throw new Error('X-Review-Id header is missing');
-    expect(response.payload).toBe(`https://reviews.test/api/reviews/${reviewId}.html`);
+    expect(response.payload).toBe(`https://reviews.test/result/${reviewId}`);
     expect(response.headers.location).toBe(response.payload);
     expect(response.headers['cache-control']).toBe('no-store');
 
     const report = await app.inject({
       method: 'GET',
-      url: `/api/reviews/${reviewId}.html`,
+      url: `/result/${reviewId}`,
     });
     expect(report.statusCode).toBe(200);
     expect(report.headers['content-type']).toContain('text/html');
