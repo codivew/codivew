@@ -4,7 +4,9 @@ set -eu
 
 usage() {
   cat <<'EOF'
-Usage: ./review.sh [staged|working|branch] [--open]
+Usage: ./review.sh [working|staged|branch] [--open]
+
+Default mode: working
 
 Optional environment variables:
   REVIEW_API_TOKEN   Review server Bearer token (default: dev-token)
@@ -72,11 +74,11 @@ cleanup() {
     "${git_error_file:-}"
 }
 
-mode="${1:-staged}"
+mode="${1:-working}"
 open_result="false"
 
 if [ "${1:-}" = "--open" ]; then
-  mode="staged"
+  mode="working"
   open_result="true"
 elif [ "${2:-}" = "--open" ]; then
   open_result="true"

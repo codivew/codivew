@@ -5,9 +5,9 @@ set "REVIEW_BATCH_MODE=%~1"
 set "REVIEW_BATCH_OPEN=false"
 set "REVIEW_BATCH_PATH=%~f0"
 
-if "%REVIEW_BATCH_MODE%"=="" set "REVIEW_BATCH_MODE=staged"
+if "%REVIEW_BATCH_MODE%"=="" set "REVIEW_BATCH_MODE=working"
 if /I "%REVIEW_BATCH_MODE%"=="--open" (
-  set "REVIEW_BATCH_MODE=staged"
+  set "REVIEW_BATCH_MODE=working"
   set "REVIEW_BATCH_OPEN=true"
 )
 if /I "%~2"=="--open" set "REVIEW_BATCH_OPEN=true"
@@ -27,11 +27,13 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command ^
 exit /b %ERRORLEVEL%
 
 :usage
-echo Usage: review.bat [staged^|working^|branch] [--open] 1>&2
+echo Usage: review.bat [working^|staged^|branch] [--open] 1>&2
 exit /b 1
 
 :usage_ok
-echo Usage: review.bat [staged^|working^|branch] [--open]
+echo Usage: review.bat [working^|staged^|branch] [--open]
+echo.
+echo Default mode: working
 echo.
 echo Optional environment variables:
 echo   REVIEW_API_TOKEN   Review server Bearer token ^(default: dev-token^)

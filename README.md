@@ -239,13 +239,13 @@ curl.exe -L https://raw.githubusercontent.com/knsan189/code-review-server/main/r
 ```
 
 ```text
-Usage: ./review.sh [staged|working|branch] [--open]
+Usage: ./review.sh [working|staged|branch] [--open]
 ```
 
 Windows 사용법도 동일합니다.
 
 ```text
-Usage: review.bat [staged|working|branch] [--open]
+Usage: review.bat [working|staged|branch] [--open]
 ```
 
 모드:
@@ -256,7 +256,7 @@ Usage: review.bat [staged|working|branch] [--open]
 | `working` | `git diff`, staged되지 않은 tracked 변경          |
 | `branch`  | `git diff BASE_BRANCH...HEAD`, 커밋된 브랜치 변경 |
 
-인자를 생략하면 `staged`가 사용됩니다.
+인자를 생략하면 `working`이 사용됩니다.
 
 ```bash
 ./review.sh
