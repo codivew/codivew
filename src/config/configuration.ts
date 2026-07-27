@@ -4,9 +4,15 @@ import { validateEnvironment } from './env.schema';
 export type AppConfiguration = ReturnType<typeof configuration>;
 
 export default function configuration(): {
-  app: { nodeEnv: string; port: number; apiToken: string; bodyLimitBytes: number };
+  app: {
+    nodeEnv: string;
+    port: number;
+    apiToken: string;
+    publicUrl: string;
+    bodyLimitBytes: number;
+  };
   ollama: { baseUrl: string; model: string; timeoutMs: number; readyTimeoutMs: number };
-  review: { maxDiffChars: number };
+  review: { maxDiffChars: number; resultTtlMs: number };
 } {
   const env: Environment = validateEnvironment(process.env);
   return {
@@ -14,6 +20,7 @@ export default function configuration(): {
       nodeEnv: env.NODE_ENV,
       port: env.PORT,
       apiToken: env.REVIEW_API_TOKEN,
+      publicUrl: env.PUBLIC_URL.replace(/\/$/, ''),
       bodyLimitBytes: env.REVIEW_BODY_LIMIT_BYTES,
     },
     ollama: {
@@ -22,6 +29,9 @@ export default function configuration(): {
       timeoutMs: env.OLLAMA_TIMEOUT_MS,
       readyTimeoutMs: 5_000,
     },
-    review: { maxDiffChars: env.REVIEW_MAX_DIFF_CHARS },
+    review: {
+      maxDiffChars: env.REVIEW_MAX_DIFF_CHARS,
+      resultTtlMs: env.REVIEW_RESULT_TTL_MS,
+    },
   };
 }

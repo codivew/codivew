@@ -9,6 +9,7 @@ import { DiffFilterService } from './diff-filter.service';
 import { HtmlRendererService } from './html-renderer.service';
 import { OllamaService } from './ollama.service';
 import { ReviewPromptService } from './review-prompt.service';
+import { ReviewStoreService } from './review-store.service';
 import { parseReviewResult } from './schemas/review-result.schema';
 import type { ReviewResult } from './types/review-result';
 
@@ -18,6 +19,7 @@ export type GeneratedReview = {
   html: string;
   verdict: ReviewResult['verdict'];
   issueCount: number;
+  publicUrl: string;
 };
 
 @Injectable()
@@ -30,6 +32,7 @@ export class ReviewsService {
     private readonly prompt: ReviewPromptService,
     private readonly ollama: OllamaService,
     private readonly renderer: HtmlRendererService,
+    private readonly store: ReviewStoreService,
   ) {}
 
   async createReview(dto: CreateReviewDto): Promise<GeneratedReview> {
@@ -67,15 +70,19 @@ export class ReviewsService {
     }
 
     const elapsedMs = Date.now() - startedAt;
+    const filename = `${reviewId}.html`;
+    const publicUrl = `${this.config.getOrThrow<string>('app.publicUrl')}/${filename}`;
     const html = this.renderer.render({
       reviewId,
       createdAt: new Date(),
       elapsedMs,
       model: this.ollama.model,
+      publicUrl,
       request: dto,
       filtered,
       result,
     });
+    this.store.set(reviewId, html);
     this.logger.log({
       reviewId,
       repository: dto.repository,
@@ -91,10 +98,11 @@ export class ReviewsService {
     });
     return {
       reviewId,
-      filename: `${reviewId}.html`,
+      filename,
       html,
       verdict: result.verdict,
       issueCount: result.issues.length,
+      publicUrl,
     };
   }
 

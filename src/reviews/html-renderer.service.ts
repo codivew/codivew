@@ -9,6 +9,7 @@ export type ReviewRenderContext = {
   createdAt: Date;
   elapsedMs: number;
   model: string;
+  publicUrl: string;
   request: CreateReviewDto;
   filtered: FilteredDiffResult;
   result: ReviewResult;
@@ -55,7 +56,7 @@ ${this.section('Must Fix', 'must_fix', result.issues)}
 ${this.section('Should Fix', 'should_fix', result.issues)}
 ${this.section('Suggestions', 'suggestion', result.issues)}
 <section class="panel"><h2>권장 테스트</h2>${result.tests.length === 0 ? '<p class="empty">권장 테스트가 없습니다.</p>' : `<ul>${result.tests.map((test) => `<li>${escapeHtml(test)}</li>`).join('')}</ul>`}</section>
-<section class="panel"><h2>생성 정보</h2><dl class="meta">${this.row('생성 시각', context.createdAt.toISOString())}${this.row('처리 시간', `${context.elapsedMs}ms`)}${this.row('모델', context.model)}</dl></section>
+<section class="panel"><h2>생성 정보</h2><dl class="meta">${this.row('공개 URL', context.publicUrl, 'path')}${this.row('생성 시각', context.createdAt.toISOString())}${this.row('처리 시간', `${context.elapsedMs}ms`)}${this.row('모델', context.model)}</dl></section>
 </main></body></html>`;
   }
 

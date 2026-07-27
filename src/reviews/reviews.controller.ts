@@ -16,9 +16,6 @@ import { ApiTokenGuard } from '../common/guards/api-token.guard';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { ReviewsService } from './reviews.service';
 
-const CONTENT_SECURITY_POLICY =
-  "default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
-
 @Controller('reviews')
 @UseGuards(ApiTokenGuard)
 @ApiTags('reviews')
@@ -28,10 +25,13 @@ export class ReviewsController {
 
   @Post()
   @ApiConsumes('application/json')
-  @ApiProduces('text/html')
+  @ApiProduces('text/plain')
   @ApiCreatedResponse({
-    description: 'UUID 파일명의 독립 실행형 HTML 코드 리뷰 보고서',
-    schema: { type: 'string', format: 'binary' },
+    description: '생성된 HTML 코드 리뷰 보고서의 공개 URL',
+    schema: {
+      type: 'string',
+      example: 'https://reviews.example.com/api/reviews/550e8400-e29b-41d4-a716-446655440000.html',
+    },
   })
   @ApiUnauthorizedResponse({ description: 'Bearer 토큰 인증 실패' })
   @ApiBadRequestResponse({ description: 'DTO 검증 실패 또는 리뷰할 diff 없음' })
@@ -41,14 +41,11 @@ export class ReviewsController {
   async create(@Body() dto: CreateReviewDto, @Res() reply: FastifyReply): Promise<FastifyReply> {
     const generated = await this.reviews.createReview(dto);
     return reply
-      .header('Content-Type', 'text/html; charset=utf-8')
-      .header('Content-Disposition', `attachment; filename="${generated.filename}"`)
+      .header('Content-Type', 'text/plain; charset=utf-8')
+      .header('Location', generated.publicUrl)
       .header('Cache-Control', 'no-store')
-      .header('Pragma', 'no-cache')
       .header('X-Content-Type-Options', 'nosniff')
-      .header('Content-Security-Policy', CONTENT_SECURITY_POLICY)
-      .header('Referrer-Policy', 'no-referrer')
       .header('X-Review-Id', generated.reviewId)
-      .send(generated.html);
+      .send(generated.publicUrl);
   }
 }

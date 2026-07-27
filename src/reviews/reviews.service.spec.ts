@@ -5,6 +5,7 @@ import { DiffFilterService } from './diff-filter.service';
 import { HtmlRendererService } from './html-renderer.service';
 import { OllamaService } from './ollama.service';
 import { ReviewPromptService } from './review-prompt.service';
+import { ReviewStoreService } from './review-store.service';
 import { ReviewsService } from './reviews.service';
 
 const diff = `diff --git a/src/app.ts b/src/app.ts
@@ -21,11 +22,15 @@ describe('ReviewsService', () => {
   const ollama = { model: 'qwen', generateReview: jest.fn() };
   const create = (maxDiffChars = 10000): ReviewsService =>
     new ReviewsService(
-      new ConfigService({ review: { maxDiffChars } }),
+      new ConfigService({
+        review: { maxDiffChars, resultTtlMs: 86_400_000 },
+        app: { publicUrl: 'https://reviews.test/api/reviews' },
+      }),
       new DiffFilterService(),
       new ReviewPromptService(),
       ollama as unknown as OllamaService,
       renderer as unknown as HtmlRendererService,
+      new ReviewStoreService(new ConfigService({ review: { resultTtlMs: 86_400_000 } })),
     );
 
   beforeEach(() => jest.clearAllMocks());
@@ -35,6 +40,9 @@ describe('ReviewsService', () => {
     const result = await create().createReview(dto);
     expect(result.filename).toMatch(/^[0-9a-f-]{36}\.html$/);
     expect(result.html).toBe('<html></html>');
+    expect(result.publicUrl).toMatch(
+      /^https:\/\/reviews\.test\/api\/reviews\/[0-9a-f-]{36}\.html$/,
+    );
     expect(renderer.render).toHaveBeenCalledTimes(1);
   });
 

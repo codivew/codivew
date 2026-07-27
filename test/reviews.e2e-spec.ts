@@ -32,6 +32,7 @@ describe('Review API (e2e)', () => {
   beforeAll(async () => {
     process.env.NODE_ENV = 'test';
     process.env.REVIEW_API_TOKEN = 'test-token';
+    process.env.PUBLIC_URL = 'https://reviews.test/api/reviews';
     process.env.REVIEW_MAX_DIFF_CHARS = '120';
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(OllamaService)
@@ -57,21 +58,30 @@ describe('Review API (e2e)', () => {
     ollama.isReady.mockResolvedValue(true);
   });
 
-  it('returns a downloadable UUID HTML file', async () => {
+  it('returns only the public URL and serves the generated HTML there', async () => {
     const response = await app.inject({
       method: 'POST',
       url: '/api/reviews',
-      headers: { authorization: 'Bearer test-token', accept: 'text/html' },
+      headers: { authorization: 'Bearer test-token', accept: 'text/plain' },
       payload: { repository: 'repo', mode: 'staged', diff },
     });
     expect(response.statusCode).toBe(201);
-    expect(response.headers['content-type']).toContain('text/html');
-    expect(response.headers['content-disposition']).toMatch(
-      /attachment; filename="[0-9a-f-]{36}\.html"/,
-    );
-    expect(response.headers['x-review-id']).toMatch(/^[0-9a-f-]{36}$/);
+    expect(response.headers['content-type']).toContain('text/plain');
+    const reviewId = response.headers['x-review-id'];
+    expect(reviewId).toMatch(/^[0-9a-f-]{36}$/);
+    if (typeof reviewId !== 'string') throw new Error('X-Review-Id header is missing');
+    expect(response.payload).toBe(`https://reviews.test/api/reviews/${reviewId}.html`);
+    expect(response.headers.location).toBe(response.payload);
     expect(response.headers['cache-control']).toBe('no-store');
-    expect(response.headers['content-security-policy']).toContain("default-src 'none'");
+
+    const report = await app.inject({
+      method: 'GET',
+      url: `/api/reviews/${reviewId}.html`,
+    });
+    expect(report.statusCode).toBe(200);
+    expect(report.headers['content-type']).toContain('text/html');
+    expect(report.headers['content-security-policy']).toContain("default-src 'none'");
+    expect(report.payload).toContain('AI Code Review');
   });
 
   it('rejects missing authorization', async () => {

@@ -1,6 +1,6 @@
 # AI Code Review Server
 
-Git diff와 프로젝트 정보를 받아 로컬 Ollama 모델로 리뷰한 뒤, 외부 리소스가 없는 UUID 이름의 HTML 파일을 반환하는 stateless NestJS 서버입니다. CLI, 프런트엔드, 데이터베이스 및 리뷰 이력 저장은 포함하지 않습니다.
+Git diff와 프로젝트 정보를 받아 로컬 Ollama 모델로 리뷰한 뒤, 외부 리소스가 없는 UUID HTML 결과물의 공개 URL을 반환하는 NestJS 서버입니다. CLI, 프런트엔드, 데이터베이스 및 영구 리뷰 이력 저장은 포함하지 않습니다.
 
 ## 아키텍처
 
@@ -13,10 +13,11 @@ POST /api/reviews
   → OllamaService (/api/chat, JSON Schema)
   → ReviewResult Zod 검증 (실패 시 1회 재요청)
   → HtmlRendererService
-  → <UUID>.html 다운로드 응답
+  → 메모리에 최근 결과 보관
+  → PUBLIC_URL/<UUID>.html 문자열 응답
 ```
 
-NestJS는 Guard, ValidationPipe, Filter와 모듈 경계를 일관되게 제공하고, Fastify는 작은 런타임 오버헤드와 명시적인 body limit를 제공하므로 선택했습니다. 모든 상태는 요청 안에서만 유지되며 생성한 HTML은 디스크에 저장하지 않습니다.
+NestJS는 Guard, ValidationPipe, Filter와 모듈 경계를 일관되게 제공하고, Fastify는 작은 런타임 오버헤드와 명시적인 body limit를 제공하므로 선택했습니다. 생성한 HTML은 디스크에 저장하지 않고 프로세스 메모리에 최근 1,000건만 보관합니다.
 
 ## 요구사항 및 설치
 
@@ -31,16 +32,18 @@ cp .env.example .env
 
 환경변수:
 
-| 이름                      | 기본값                         | 설명                                |
-| ------------------------- | ------------------------------ | ----------------------------------- |
-| `NODE_ENV`                | `development`                  | `development`, `test`, `production` |
-| `PORT`                    | `3000`                         | 서버 포트(1~65535)                  |
-| `REVIEW_API_TOKEN`        | 빈 문자열                      | Bearer 토큰. production에서는 필수  |
-| `OLLAMA_BASE_URL`         | `http://localhost:11434`       | Ollama 기본 URL                     |
-| `OLLAMA_MODEL`            | `qwen3.6:35b-a3b-coding-mxfp8` | 리뷰 모델                           |
-| `OLLAMA_TIMEOUT_MS`       | `180000`                       | 모델 호출 제한 시간                 |
-| `REVIEW_MAX_DIFF_CHARS`   | `120000`                       | 필터링 후 diff 최대 문자 수         |
-| `REVIEW_BODY_LIMIT_BYTES` | `524288`                       | HTTP 요청 본문 최대 바이트 수       |
+| 이름                      | 기본값                              | 설명                                |
+| ------------------------- | ----------------------------------- | ----------------------------------- |
+| `NODE_ENV`                | `development`                       | `development`, `test`, `production` |
+| `PORT`                    | `3000`                              | 서버 포트(1~65535)                  |
+| `REVIEW_API_TOKEN`        | 빈 문자열                           | Bearer 토큰. production에서는 필수  |
+| `PUBLIC_URL`              | `http://localhost:3000/api/reviews` | 공개 결과물 URL의 기본 경로         |
+| `OLLAMA_BASE_URL`         | `http://localhost:11434`            | Ollama 기본 URL                     |
+| `OLLAMA_MODEL`            | `qwen3.6:35b-a3b-coding-mxfp8`      | 리뷰 모델                           |
+| `OLLAMA_TIMEOUT_MS`       | `180000`                            | 모델 호출 제한 시간                 |
+| `REVIEW_MAX_DIFF_CHARS`   | `120000`                            | 필터링 후 diff 최대 문자 수         |
+| `REVIEW_RESULT_TTL_MS`    | `86400000`                          | 생성 결과물 유지 시간(밀리초)       |
+| `REVIEW_BODY_LIMIT_BYTES` | `524288`                            | HTTP 요청 본문 최대 바이트 수       |
 
 환경변수는 시작 시 Zod로 검증됩니다. production에서 토큰이 없거나 URL·숫자 범위가 잘못되면 서버가 시작되지 않습니다.
 
@@ -50,6 +53,7 @@ cp .env.example .env
 
 ```bash
 REVIEW_API_TOKEN=dev-token \
+PUBLIC_URL=http://localhost:3000/api/reviews \
 OLLAMA_BASE_URL=http://localhost:11434 \
 OLLAMA_MODEL=qwen3.6:35b-a3b-coding-mxfp8 \
 npm run start:dev
@@ -92,7 +96,7 @@ Swagger UI는 서버 실행 후 `http://localhost:3000/api/docs`에서 확인할
 - `baseBranch`, `commitSha`, `projectContext`: 선택 사항
 - 알 수 없는 필드는 거부됩니다.
 - 오류는 항상 `{ "error": { "code", "message", "details?" } }` JSON입니다.
-- 성공은 JSON이 아니라 `Content-Disposition: attachment`가 지정된 HTML입니다.
+- 성공 응답은 `text/plain`이며 본문에는 `PUBLIC_URL/<UUID>.html` URL만 들어갑니다.
 
 staged diff 요청 파일 생성:
 
@@ -106,7 +110,7 @@ jq -n \
   > review-request.json
 ```
 
-UUID HTML 파일로 저장:
+리뷰를 생성하고 공개 URL 받기:
 
 ```bash
 curl \
@@ -115,19 +119,23 @@ curl \
   "http://localhost:3000/api/reviews" \
   -H "Authorization: Bearer dev-token" \
   -H "Content-Type: application/json" \
-  -H "Accept: text/html" \
-  --data-binary @review-request.json \
-  --remote-header-name \
-  --remote-name
+  -H "Accept: text/plain" \
+  --data-binary @review-request.json
 ```
 
-응답의 `X-Review-Id`와 다운로드 파일명에 같은 UUID가 들어갑니다. HTML은 CSS까지 내장하며 네트워크 없이 브라우저에서 열고 인쇄할 수 있습니다.
+응답 예시:
+
+```text
+https://reviews.example.com/api/reviews/550e8400-e29b-41d4-a716-446655440000.html
+```
+
+`PUBLIC_URL`은 외부에서 실제 `/api/reviews` 경로에 접근할 수 있는 주소로 설정해야 합니다. 반환된 URL의 GET 요청에는 API 토큰이 필요하지 않습니다. 결과물은 `REVIEW_RESULT_TTL_MS`가 지나면 만료되어 404를 반환하며 기본 유지 시간은 하루입니다. HTML은 CSS까지 내장되어 브라우저에서 열고 인쇄할 수 있습니다.
 
 ## Diff 필터와 보안
 
 lockfile, 빌드 산출물, source map, minified JS 및 `.env`, 개인 키·인증서 파일은 해당 파일의 전체 `diff --git` 블록 단위로 제거됩니다. `.env.example`과 `.env.sample`은 유지됩니다. 모든 블록이 제거되면 `EMPTY_DIFF`를 반환하며 diff를 자동으로 잘라내지는 않습니다.
 
-Bearer 토큰은 `timingSafeEqual`로 비교합니다. 토큰, Authorization 헤더, 요청 본문, diff, 모델 원문, 코드 스니펫은 로그에 기록하지 않습니다. 모델과 사용자 문자열은 `& < > " '`를 HTML escape하고, 다운로드 응답에는 CSP, `nosniff`, `no-referrer`, `no-store` 헤더를 적용합니다. 운영 환경에서는 충분히 긴 무작위 토큰을 사용하고 Ollama 포트를 외부에 공개하지 마십시오.
+Bearer 토큰은 `timingSafeEqual`로 비교합니다. 토큰, Authorization 헤더, 요청 본문, diff, 모델 원문, 코드 스니펫은 로그에 기록하지 않습니다. 모델과 사용자 문자열은 `& < > " '`를 HTML escape하고, 결과물 응답에는 CSP, `nosniff`, `no-referrer`, `no-store` 헤더를 적용합니다. 공개 URL을 아는 사용자는 인증 없이 결과물을 볼 수 있으므로 URL과 리뷰 내용을 민감 정보로 취급해야 합니다.
 
 ## Docker
 
@@ -158,5 +166,5 @@ npm run build
 - 표준 `diff --git` 형식만 입력으로 지원합니다. Git 바이너리 diff 내용 자체는 분석하지 않습니다.
 - 단일 요청에서 모델 컨텍스트 한도를 넘는 diff를 분할하거나 요약하지 않습니다.
 - 모델 검증 실패 재시도는 한 번뿐입니다.
-- 리뷰 결과는 저장하거나 검색할 수 없습니다.
+- 결과물은 설정된 TTL 동안 프로세스 메모리에 최근 1,000건만 유지되며 재시작 또는 새 배포 시에도 사라집니다. 여러 서버 인스턴스 사이에는 공유되지 않습니다.
 - GitHub/GitLab API, PR/MR 댓글, 자동 수정, SARIF, 다중 모델 및 사용자 계정은 지원하지 않습니다.
