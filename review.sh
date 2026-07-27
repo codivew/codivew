@@ -105,7 +105,7 @@ repository_root="$(git rev-parse --show-toplevel)"
 repository="$(basename "$repository_root")"
 commit_sha="$(git -C "$repository_root" rev-parse HEAD)"
 base_branch="${BASE_BRANCH:-main}"
-review_api_url="${REVIEW_API_URL:-http://localhost:3000/api/reviews}"
+review_api_url="${REVIEW_API_URL:-http://localhost:3000}/api/reviews"
 review_api_token="${REVIEW_API_TOKEN:-dev-token}"
 
 diff_file="$(mktemp "${TMPDIR:-/tmp}/code-review-diff.XXXXXX")"
