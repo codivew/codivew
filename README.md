@@ -66,6 +66,36 @@ npm run build
 NODE_ENV=production REVIEW_API_TOKEN='strong-secret' npm start
 ```
 
+PM2로 실행:
+
+```bash
+npm run pm2:start
+npm run pm2:status
+npm run pm2:logs
+```
+
+코드와 환경변수 변경 후 재빌드·재시작:
+
+```bash
+npm run pm2:restart
+```
+
+중지하거나 PM2 목록에서 제거:
+
+```bash
+npm run pm2:stop
+npm run pm2:delete
+```
+
+서버 재부팅 후에도 자동 실행하려면 운영체제별로 PM2가 출력하는 명령을 실행한 뒤 현재 프로세스 목록을 저장합니다.
+
+```bash
+npx pm2 startup
+npx pm2 save
+```
+
+결과물은 프로세스 메모리에 있으므로 `ecosystem.config.cjs`는 cluster가 아닌 단일 fork 인스턴스를 사용합니다. PM2 재시작 시 기존 결과 URL은 만료 시간과 관계없이 사라집니다.
+
 상태 확인:
 
 ```bash
