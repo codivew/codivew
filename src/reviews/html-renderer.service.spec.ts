@@ -66,4 +66,55 @@ describe('HtmlRendererService', () => {
     expect(html.match(/발견된 항목이 없습니다\./g)).toHaveLength(3);
     expect(html).not.toContain('Commit SHA</dt>');
   });
+
+  it('renders a numbered diff and links feedback to its code line', () => {
+    const diff = `diff --git a/src/app.ts b/src/app.ts
+--- a/src/app.ts
++++ b/src/app.ts
+@@ -4,2 +4,2 @@
+-const value = oldValue;
++const value = newValue;
+ return value;
+`;
+    const html = renderer.render({
+      reviewId: 'id',
+      createdAt: new Date(0),
+      elapsedMs: 0,
+      model: 'model',
+      publicUrl: 'https://reviews.test/result/test-id',
+      request: { repository: 'repo', mode: ReviewMode.WORKING, diff },
+      filtered: {
+        diff,
+        reviewedFiles: ['src/app.ts'],
+        originalFileCount: 1,
+        filteredFileCount: 0,
+        originalCharCount: diff.length,
+        filteredCharCount: diff.length,
+      },
+      result: {
+        verdict: 'comment',
+        risk: 'medium',
+        summary: '확인이 필요합니다.',
+        issues: [
+          {
+            severity: 'should_fix',
+            confidence: 0.9,
+            file: 'src/app.ts',
+            line: 4,
+            title: '값을 확인하세요',
+            description: '새 값이 올바른지 확인하세요.',
+          },
+        ],
+        tests: [],
+      },
+    });
+
+    expect(html).toContain('src/app.ts · 4번째 줄 → 코드 보기');
+    expect(html).toContain('href="#diff-0-L4"');
+    expect(html).toContain('id="diff-0-L4"');
+    expect(html).toContain('class="addition"');
+    expect(html).toContain('class="deletion"');
+    expect(html).toContain('class="inline-feedback"');
+    expect(html).toContain('href="#feedback-0"');
+  });
 });

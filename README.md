@@ -6,6 +6,7 @@ Git diff를 Ollama 코딩 모델로 검토하고, 브라우저에서 열 수 있
 - Bearer 토큰 인증
 - DTO와 환경변수 검증
 - lockfile, 빌드 산출물, 민감 파일 diff 제외
+- 파일별 unified diff, 기존/변경 라인 번호와 라인별 AI 피드백 표시
 - Ollama structured output + Zod 후처리 검증
 - 외부 CSS, JavaScript, 폰트가 없는 HTML 결과물
 - `PUBLIC_URL/<12자리 ID>` 공개 URL
