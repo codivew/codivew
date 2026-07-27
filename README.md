@@ -11,6 +11,7 @@ Git diff를 Ollama 코딩 모델로 검토하고, 브라우저에서 열 수 있
 - `PUBLIC_URL/<12자리 ID>` 공개 URL
 - 메모리 저장 및 TTL 만료
 - Swagger, PM2, Docker 지원
+- macOS/Linux `review.sh`, Windows `review.bat` 클라이언트
 
 별도 프런트엔드, 데이터베이스, 영구 리뷰 이력, GitHub/GitLab 연동은 포함하지 않습니다.
 
@@ -41,6 +42,7 @@ Ollama에는 구조, 타입, enum 중심의 호환 가능한 JSON Schema를 전�
 - npm 10 이상
 - 별도로 실행 중인 Ollama
 - `review.sh` 사용 시 `git`, `curl`, `jq`
+- `review.bat` 사용 시 Git for Windows와 Windows PowerShell 5.1 이상
 
 ## 설치
 
@@ -222,8 +224,28 @@ curl \
 
 스크립트는 저장소 정보와 Git diff를 만들고 리뷰 API에 전송한 뒤, 진행 스피너와 경과 시간, 결과 URL을 출력합니다.
 
+macOS와 Linux에서는 리뷰하려는 Git 저장소의 루트에서 스크립트를 다운로드하고 실행 권한을 설정합니다.
+
+```bash
+curl -L \
+  https://raw.githubusercontent.com/knsan189/code-review-server/main/review.sh \
+  -o review.sh && chmod +x review.sh
+```
+
+Windows CMD 또는 PowerShell에서는 `review.bat`을 다운로드합니다.
+
+```bat
+curl.exe -L https://raw.githubusercontent.com/knsan189/code-review-server/main/review.bat -o review.bat
+```
+
 ```text
 Usage: ./review.sh [staged|working|branch] [--open]
+```
+
+Windows 사용법도 동일합니다.
+
+```text
+Usage: review.bat [staged|working|branch] [--open]
 ```
 
 모드:
@@ -249,6 +271,15 @@ BASE_BRANCH=develop ./review.sh branch
 ./review.sh working --open
 ```
 
+Windows:
+
+```bat
+review.bat
+review.bat staged
+review.bat working --open
+set BASE_BRANCH=develop && review.bat branch
+```
+
 다른 서버와 토큰 사용:
 
 ```bash
@@ -258,6 +289,22 @@ REVIEW_API_TOKEN=replace-with-a-strong-token \
 ```
 
 `REVIEW_API_URL`에는 `/api/reviews`가 아니라 서버 기본 주소만 입력합니다. 스크립트가 `/api/reviews`를 붙입니다.
+
+Windows CMD에서 다른 서버와 토큰 사용:
+
+```bat
+set REVIEW_API_URL=https://review.example.com
+set REVIEW_API_TOKEN=replace-with-a-strong-token
+review.bat staged
+```
+
+PowerShell에서는 다음처럼 설정합니다.
+
+```powershell
+$env:REVIEW_API_URL = 'https://review.example.com'
+$env:REVIEW_API_TOKEN = 'replace-with-a-strong-token'
+.\review.bat staged
+```
 
 ```text
 AI Code Review
