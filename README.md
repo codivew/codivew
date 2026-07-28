@@ -78,7 +78,7 @@ Ollama URL (http://localhost:11434):
 Codivew는 현재 디렉터리에서 상위로 올라가며 Git 저장소 루트를 찾습니다.
 
 ```bash
-# 추적 중인 파일의 unstaged 변경사항
+# unstaged 변경사항과 Git이 아직 추적하지 않는 새 파일
 codivew
 codivew working
 
@@ -145,13 +145,13 @@ codivew staged \
 
 ## 리뷰 모드
 
-| 모드      | Git 비교 기준            | 기본값 |
-| --------- | ------------------------ | ------ |
-| `working` | `git diff`               | 예     |
-| `staged`  | `git diff --cached`      | 아니요 |
-| `branch`  | `git diff <base>...HEAD` | 아니요 |
+| 모드      | Git 비교 기준               | 기본값 |
+| --------- | --------------------------- | ------ |
+| `working` | `git diff` + untracked 파일 | 예     |
+| `staged`  | `git diff --cached`         | 아니요 |
+| `branch`  | `git diff <base>...HEAD`    | 아니요 |
 
-모든 모드는 rename을 포함한 추가·수정·이름 변경 파일을 대상으로 하며, Git이 아직 추적하지 않는 파일은 `working` 모드에 포함되지 않습니다.
+모든 모드는 rename을 포함한 추가·수정·이름 변경 파일을 대상으로 합니다. `working` 모드는 `.gitignore`에 포함되지 않은 untracked 파일도 리뷰합니다.
 
 ## 전체 명령어
 

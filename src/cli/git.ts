@@ -24,7 +24,12 @@ export async function createGitReviewInput(
   if (options.mode === ReviewMode.BRANCH) diffArguments.push(`${options.baseBranch}...HEAD`);
   diffArguments.push('--unified=5', '--diff-filter=ACMRT');
 
-  const diff = await git(repositoryRoot, diffArguments, false);
+  const trackedDiff = await git(repositoryRoot, diffArguments, false);
+  const untrackedDiff =
+    options.mode === ReviewMode.WORKING ? await createUntrackedDiff(repositoryRoot) : '';
+  const diff = [trackedDiff.trimEnd(), untrackedDiff.trimEnd()]
+    .filter((part) => part.length > 0)
+    .join('\n');
   if (diff.trim().length === 0) {
     throw new ReviewError(
       ERROR_CODES.EMPTY_DIFF,
@@ -40,14 +45,43 @@ export async function createGitReviewInput(
   };
 }
 
-function git(cwd: string, args: string[], trim = true): Promise<string> {
+async function createUntrackedDiff(repositoryRoot: string): Promise<string> {
+  const output = await git(
+    repositoryRoot,
+    ['ls-files', '--others', '--exclude-standard', '-z'],
+    false,
+  );
+  const paths = output.split('\0').filter((path) => path.length > 0);
+  const nullDevice = process.platform === 'win32' ? 'NUL' : '/dev/null';
+  const diffs: string[] = [];
+
+  for (const path of paths) {
+    const diff = await git(
+      repositoryRoot,
+      ['diff', '--no-index', '--unified=5', '--', nullDevice, path],
+      false,
+      [0, 1],
+    );
+    if (diff.trim().length > 0) diffs.push(diff.trimEnd());
+  }
+
+  return diffs.join('\n');
+}
+
+function git(
+  cwd: string,
+  args: string[],
+  trim = true,
+  acceptedExitCodes: readonly number[] = [0],
+): Promise<string> {
   return new Promise((resolve, reject) => {
     execFile(
       'git',
       args,
       { cwd, encoding: 'utf8', maxBuffer: 50 * 1024 * 1024 },
       (error, stdout, stderr) => {
-        if (error !== null) {
+        const exitCode = typeof error?.code === 'number' ? error.code : undefined;
+        if (error !== null && (exitCode === undefined || !acceptedExitCodes.includes(exitCode))) {
           reject(
             new ReviewError(
               ERROR_CODES.GIT_FAILED,
