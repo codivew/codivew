@@ -1,6 +1,6 @@
 {
   "name": "codivew",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "private": false,
   "type": "module",
   "description": "Codivew CLI for local AI code reviews powered by Ollama",
@@ -24,7 +24,7 @@
     "lint": "eslint \"src/**/*.ts\"",
     "format": "prettier --write \"src/**/*.ts\" \"*.{json,md,mjs}\" \"scripts/**/*.mjs\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"*.{json,md,mjs}\" \"scripts/**/*.mjs\"",
-    "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --config jest.config.mjs",
+    "test": "jest --config jest.config.mjs",
     "prepack": "npm run check && npm run build"
   },
   "dependencies": {

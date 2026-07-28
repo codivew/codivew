@@ -6,14 +6,16 @@
     "removeComments": true,
     "target": "ES2022",
     "sourceMap": true,
+    "rootDir": "./src",
     "outDir": "./dist",
     "incremental": true,
     "isolatedModules": true,
     "skipLibCheck": true,
     "strict": true,
     "noImplicitOverride": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "types": ["node", "jest"]
   },
-  "include": ["src/**/*.ts", "jest.config.ts"],
+  "include": ["src/**/*.ts", "jest.config.ts", "eslint.config.mjs"],
   "exclude": ["node_modules", "dist"]
 }

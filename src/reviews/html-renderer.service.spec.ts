@@ -62,8 +62,10 @@ describe('HtmlRendererService', () => {
       },
       result: { verdict: 'approve', risk: 'low', summary: '좋습니다.', issues: [], tests: [] },
     });
-    expect(html.match(/발견된 항목이 없습니다\./g)).toHaveLength(3);
-    expect(html).not.toContain('Commit SHA</dt>');
+    expect(html.match(/발견된 문제가 없습니다\./g)).toHaveLength(1);
+    expect(html).not.toContain('커밋 SHA</dt>');
+    expect(html).toContain('<dt>리뷰 모드</dt><dd class="">작업 트리</dd>');
+    expect(html).toContain('<dt>처리 시간</dt><dd class="">0.0초</dd>');
   });
 
   it('renders a numbered diff and links feedback to its code line', () => {
@@ -113,11 +115,17 @@ describe('HtmlRendererService', () => {
     expect(html).toContain('class="addition"');
     expect(html).toContain('class="deletion"');
     expect(html).toContain('class="inline-feedback"');
+    expect(html).toContain('<a class="inline-note" href="#feedback-0">');
     expect(html).toContain('href="#feedback-0"');
+    expect(html).toContain('상세 보기 ↑');
+    expect(html.match(/새 값이 올바른지 확인하세요\./g)).toHaveLength(1);
     expect(html).toContain('<col class="line-col"><col class="line-col"><col class="sign-col">');
     expect(html).toContain('class="overview-layout"');
     expect(html).toContain('<details class="diff-file" id="diff-file-0" open>');
-    expect(html).toContain('변경 3줄 · 피드백 1개');
+    expect(html).toContain('변경 2줄 · 피드백 1개');
+    expect(html).toContain('<section><h2>수정 권장</h2>');
+    expect(html).not.toContain('<section><h2>필수 수정</h2>');
+    expect(html).not.toContain('<section><h2>제안</h2>');
   });
 
   it('collapses long file diffs by default', () => {
