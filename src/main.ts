@@ -9,7 +9,6 @@ import { openReport, writeReport } from './cli/report.js';
 import { runSetup } from './cli/setup.js';
 import { ERROR_CODES } from './common/constants/error-codes.js';
 import { ReviewError } from './common/errors/review-error.js';
-import { validateEnvironment } from './config/env.schema.js';
 import { hasConfiguredRuntimeConfig, resolveRuntimeConfig } from './config/runtime-config.js';
 import { loadUserConfig, type UserConfig } from './config/user-config.js';
 import { DiffFilterService } from './reviews/diff-filter.service.js';
@@ -45,9 +44,8 @@ async function main(): Promise<void> {
     return;
   }
 
-  const env = validateEnvironment(process.env);
-  const userConfig = await ensureUserConfig(command.options, env);
-  const runtime = resolveRuntimeConfig(command.options, env, userConfig);
+  const userConfig = await ensureUserConfig(command.options);
+  const runtime = resolveRuntimeConfig(command.options, userConfig);
   const gitInput = await createGitReviewInput(process.cwd(), command.options);
   const request: ReviewRequest = {
     repository: gitInput.repository,
@@ -101,11 +99,10 @@ async function main(): Promise<void> {
 
 async function ensureUserConfig(
   options: Parameters<typeof hasConfiguredRuntimeConfig>[0],
-  environment: Parameters<typeof hasConfiguredRuntimeConfig>[1],
 ): Promise<UserConfig | undefined> {
   const config = await loadUserConfig();
   if (config?.ollamaUrl !== undefined && config.model !== undefined) return config;
-  if (hasConfiguredRuntimeConfig(options, environment, config)) return config;
+  if (hasConfiguredRuntimeConfig(options, config)) return config;
   if (process.stdin.isTTY && process.stdout.isTTY) return runSetup(config ?? {});
   throw new ReviewError(
     ERROR_CODES.CONFIG_REQUIRED,
@@ -188,11 +185,6 @@ Options:
   -h, --help             도움말 표시
   -v, --version          버전 표시
 
-Environment:
-  OLLAMA_BASE_URL        Ollama 주소 (기본값: http://localhost:11434)
-  OLLAMA_MODEL           리뷰 모델
-  OLLAMA_TIMEOUT_MS      요청 제한 시간 (기본값: 600000)
-  REVIEW_MAX_DIFF_CHARS  필터링 후 최대 Diff 문자 수 (기본값: 120000)
 `;
 }
 
