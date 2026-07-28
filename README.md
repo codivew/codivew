@@ -8,13 +8,12 @@ Codivew는 Git 변경사항을 Ollama 코딩 모델로 검토하고, 파일별 �
 
 ## 주요 기능
 
-- working tree, staged 변경사항, 브랜치 간 diff 리뷰
-- lockfile, 빌드 산출물, 소스맵과 민감 파일 diff 자동 제외
-- Ollama structured output과 Zod 기반 결과 검증
-- 결과 검증 실패 시 오류 사유를 전달하여 한 번 재요청
-- 파일 및 변경 라인별 AI 피드백 표시
-- 긴 파일 diff를 접고 펼칠 수 있는 아코디언
-- 외부 CSS, JavaScript, 폰트가 필요 없는 단일 HTML 리포트
+- working tree, staged 변경사항 및 브랜치 간 diff 리뷰
+- 별도 서버 없이 사용자가 선택한 Ollama 모델로 로컬 리뷰
+- 리뷰 요약과 파일 및 변경 라인별 피드백 제공
+- 긴 변경 코드를 파일별로 접고 펼칠 수 있는 HTML 리포트
+- 민감 파일과 리뷰에 불필요한 생성 파일 자동 제외
+- 결과 자동 저장 및 브라우저 열기
 - macOS, Linux, Windows 지원
 
 ## 요구사항
@@ -197,8 +196,7 @@ Codivew는 모델에 불필요하거나 민감할 가능성이 높은 diff를 �
 Git diff 생성
   → 제외 대상 파일 필터링
   → Codivew Engine 프롬프트 생성
-  → Ollama POST /api/chat
-  → 결과 검증 및 필요 시 1회 재요청
+  → Ollama 리뷰 요청 및 결과 검증
   → HTML 리포트 렌더링
   → .codivew/에 저장
   → 브라우저에서 열기
