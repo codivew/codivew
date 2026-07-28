@@ -35,7 +35,7 @@ ollama pull qwen3.6:35b-a3b-coding-mxfp8
 ```bash
 npm install -g codivew
 codivew setup
-codivew staged --open
+codivew staged
 ```
 
 `codivew setup`은 Ollama URL에 연결해 설치된 모델을 조회하고, 선택한 설정을 사용자 설정 파일에 저장합니다.
@@ -92,8 +92,11 @@ codivew branch
 # 다른 기준 브랜치 사용
 codivew branch --base develop
 
-# 결과 파일 지정 및 브라우저 열기
-codivew staged --output ./codivew-review.html --open
+# 결과 파일 지정
+codivew staged --output ./codivew-review.html
+
+# 결과 생성 후 브라우저를 열지 않기
+codivew staged --silent
 
 # 모델에 프로젝트 문맥 전달
 codivew --context "NestJS API" --context "Redis를 사용하지 않음"
@@ -107,7 +110,7 @@ codivew config set model qwen3.6:35b-a3b-coding-mxfp8
 codivew --ollama-url http://ollama.example.com:11434 --model qwen3.6:35b-a3b-coding-mxfp8
 ```
 
-기본 결과 파일은 운영체제의 임시 디렉터리 아래 `codivew/`에 저장됩니다. `--output`을 지정하면 원하는 위치에 보관할 수 있습니다.
+기본 결과 파일은 `codivew`를 실행한 현재 디렉터리의 `.codivew/` 아래에 `codivew-YYYYMMDD-HHmmss.html` 형식으로 저장되고 브라우저에서 자동으로 열립니다. 같은 초에 생성된 파일이 있으면 `-001`과 같은 순번이 추가됩니다. 생성된 결과를 Git에서 제외하려면 프로젝트의 `.gitignore`에 `.codivew/`를 추가하세요. `--output`을 지정하면 원하는 위치에 보관할 수 있고, `--silent`를 사용하면 브라우저를 열지 않습니다.
 
 전체 옵션:
 
@@ -123,7 +126,7 @@ Options:
   -b, --base <branch>    branch 모드 기준 브랜치 (기본값: main)
   -c, --context <text>   프로젝트 설명 추가, 여러 번 사용 가능
   -o, --output <path>    HTML 결과 파일 경로
-      --open             완료 후 브라우저에서 열기
+      --silent           브라우저를 열지 않기
       --ollama-url <url> 이번 실행에서 사용할 Ollama URL
       --model <name>     이번 실행에서 사용할 모델
   -h, --help             도움말 표시

@@ -116,5 +116,41 @@ describe('HtmlRendererService', () => {
     expect(html).toContain('href="#feedback-0"');
     expect(html).toContain('<col class="line-col"><col class="line-col"><col class="sign-col">');
     expect(html).toContain('class="overview-layout"');
+    expect(html).toContain('<details class="diff-file" id="diff-file-0" open>');
+    expect(html).toContain('변경 3줄 · 피드백 1개');
+  });
+
+  it('collapses long file diffs by default', () => {
+    const additions = Array.from(
+      { length: 41 },
+      (_, index) => `+const value${index} = ${index};`,
+    ).join('\n');
+    const diff = `diff --git a/src/large.ts b/src/large.ts
+--- a/src/large.ts
++++ b/src/large.ts
+@@ -0,0 +1,41 @@
+${additions}
+`;
+    const html = renderer.render({
+      reviewId: 'id',
+      createdAt: new Date(0),
+      elapsedMs: 0,
+      model: 'model',
+      request: { repository: 'repo', mode: ReviewMode.WORKING, diff },
+      filtered: {
+        diff,
+        reviewedFiles: ['src/large.ts'],
+        originalFileCount: 1,
+        filteredFileCount: 0,
+        originalCharCount: diff.length,
+        filteredCharCount: diff.length,
+      },
+      result: { verdict: 'approve', risk: 'low', summary: '좋습니다.', issues: [], tests: [] },
+    });
+
+    expect(html).toContain('<details class="diff-file" id="diff-file-0">');
+    expect(html).not.toContain('<details class="diff-file" id="diff-file-0" open>');
+    expect(html).toContain('변경 41줄 · 피드백 0개');
+    expect(html).toContain('<summary class="diff-file-header">');
   });
 });

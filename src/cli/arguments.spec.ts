@@ -8,7 +8,7 @@ describe('parseArguments', () => {
       options: {
         mode: ReviewMode.WORKING,
         baseBranch: 'main',
-        open: false,
+        silent: false,
         projectContext: [],
       },
     });
@@ -26,7 +26,7 @@ describe('parseArguments', () => {
         'Redis 없음',
         '--output',
         'review.html',
-        '--open',
+        '--silent',
         '--ollama-url',
         'http://ollama.test:11434',
         '--model',
@@ -40,7 +40,7 @@ describe('parseArguments', () => {
         output: 'review.html',
         ollamaUrl: 'http://ollama.test:11434',
         model: 'qwen',
-        open: true,
+        silent: true,
         projectContext: ['NestJS', 'Redis 없음'],
       },
     });
@@ -60,5 +60,6 @@ describe('parseArguments', () => {
 
   it('rejects unknown arguments', () => {
     expect(() => parseArguments(['--unknown'])).toThrow('알 수 없는 인자입니다');
+    expect(() => parseArguments(['--open'])).toThrow('알 수 없는 인자입니다');
   });
 });
