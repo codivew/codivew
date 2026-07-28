@@ -1,6 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import type { CreateReviewDto } from './dto/create-review.dto';
-import type { FilteredDiffResult } from './diff-filter.service';
+import type { FilteredDiffResult } from './diff-filter.service.js';
+import type { ReviewRequest } from './types/review-request.js';
 
 export type ReviewPrompts = { system: string; user: string };
 
@@ -33,9 +32,8 @@ const SYSTEM_PROMPT = `너는 엄격하지만 불필요한 지적을 만들지 �
 RTK Query 캐시와 invalidation, 비동기 처리, race condition, null 및 undefined 처리, 오류 처리,
 보안, 성능, 테스트 누락.`;
 
-@Injectable()
 export class ReviewPromptService {
-  build(dto: CreateReviewDto, filtered: FilteredDiffResult): ReviewPrompts {
+  build(dto: ReviewRequest, filtered: FilteredDiffResult): ReviewPrompts {
     return {
       system: SYSTEM_PROMPT,
       user: `다음 변경사항을 리뷰하고 지정된 JSON 스키마만 반환하세요.
@@ -54,7 +52,7 @@ ${filtered.diff}`,
     };
   }
 
-  buildRetry(dto: CreateReviewDto, filtered: FilteredDiffResult, reason: string): ReviewPrompts {
+  buildRetry(dto: ReviewRequest, filtered: FilteredDiffResult, reason: string): ReviewPrompts {
     const prompts = this.build(dto, filtered);
     return {
       system: prompts.system,

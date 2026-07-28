@@ -1,12 +1,11 @@
-import { ConfigService } from '@nestjs/config';
-import { ApiException } from '../common/errors/api-exception';
-import { ReviewMode, type CreateReviewDto } from './dto/create-review.dto';
-import { DiffFilterService } from './diff-filter.service';
-import { HtmlRendererService } from './html-renderer.service';
-import { OllamaService } from './ollama.service';
-import { ReviewPromptService } from './review-prompt.service';
-import { ReviewStoreService } from './review-store.service';
-import { ReviewsService } from './reviews.service';
+import { jest } from '@jest/globals';
+import { ReviewError } from '../common/errors/review-error.js';
+import { DiffFilterService } from './diff-filter.service.js';
+import { HtmlRendererService } from './html-renderer.service.js';
+import { OllamaService } from './ollama.service.js';
+import { ReviewPromptService } from './review-prompt.service.js';
+import { ReviewsService } from './reviews.service.js';
+import { ReviewMode, type ReviewRequest } from './types/review-request.js';
 
 const diff = `diff --git a/src/app.ts b/src/app.ts
 --- a/src/app.ts
@@ -14,54 +13,59 @@ const diff = `diff --git a/src/app.ts b/src/app.ts
 @@ -1 +1 @@
 -old
 +new`;
-const dto: CreateReviewDto = { repository: 'repo', mode: ReviewMode.STAGED, diff };
+const request: ReviewRequest = { repository: 'repo', mode: ReviewMode.STAGED, diff };
 const valid = { verdict: 'approve', risk: 'low', summary: '좋습니다.', issues: [], tests: [] };
 
 describe('ReviewsService', () => {
-  const renderer = { render: jest.fn().mockReturnValue('<html></html>') };
-  const ollama = { model: 'qwen', generateReview: jest.fn() };
-  const create = (maxDiffChars = 10000): ReviewsService =>
+  const renderer = {
+    render: jest.fn<HtmlRendererService['render']>().mockReturnValue('<html></html>'),
+  };
+  const ollama = {
+    model: 'qwen',
+    generateReview: jest.fn<OllamaService['generateReview']>(),
+  };
+  const create = (maxDiffChars = 10_000): ReviewsService =>
     new ReviewsService(
-      new ConfigService({
-        review: { maxDiffChars, resultTtlMs: 86_400_000 },
-        app: { publicUrl: 'https://reviews.test/result' },
-      }),
+      maxDiffChars,
       new DiffFilterService(),
       new ReviewPromptService(),
       ollama as unknown as OllamaService,
       renderer as unknown as HtmlRendererService,
-      new ReviewStoreService(new ConfigService({ review: { resultTtlMs: 86_400_000 } })),
     );
 
   beforeEach(() => jest.clearAllMocks());
 
-  it('generates a short public review URL', async () => {
+  it('generates a standalone HTML review', async () => {
     ollama.generateReview.mockResolvedValue(valid);
-    const result = await create().createReview(dto);
+    const result = await create().createReview(request);
     expect(result.reviewId).toMatch(/^[A-Za-z0-9_-]{12}$/);
-    expect(result.publicUrl).toMatch(/^https:\/\/reviews\.test\/result\/[A-Za-z0-9_-]{12}$/);
+    expect(result).toMatchObject({ verdict: 'approve', issueCount: 0, html: '<html></html>' });
     expect(renderer.render).toHaveBeenCalledTimes(1);
   });
 
   it('rejects an entirely filtered diff', async () => {
     await expect(
-      create().createReview({ ...dto, diff: diff.replaceAll('src/app.ts', 'pnpm-lock.yaml') }),
-    ).rejects.toBeInstanceOf(ApiException);
+      create().createReview({ ...request, diff: diff.replaceAll('src/app.ts', 'pnpm-lock.yaml') }),
+    ).rejects.toBeInstanceOf(ReviewError);
   });
 
   it('rejects an oversized filtered diff', async () => {
-    await expect(create(10).createReview(dto)).rejects.toBeInstanceOf(ApiException);
+    await expect(create(10).createReview(request)).rejects.toMatchObject({
+      code: 'DIFF_TOO_LARGE',
+    });
   });
 
   it('retries once after validation failure', async () => {
     ollama.generateReview.mockResolvedValueOnce({ invalid: true }).mockResolvedValueOnce(valid);
-    await expect(create().createReview(dto)).resolves.toMatchObject({ verdict: 'approve' });
+    await expect(create().createReview(request)).resolves.toMatchObject({ verdict: 'approve' });
     expect(ollama.generateReview).toHaveBeenCalledTimes(2);
   });
 
   it('fails when both model responses are invalid', async () => {
     ollama.generateReview.mockResolvedValue({ invalid: true });
-    await expect(create().createReview(dto)).rejects.toBeInstanceOf(ApiException);
+    await expect(create().createReview(request)).rejects.toMatchObject({
+      code: 'MODEL_RESPONSE_INVALID',
+    });
     expect(ollama.generateReview).toHaveBeenCalledTimes(2);
   });
 });

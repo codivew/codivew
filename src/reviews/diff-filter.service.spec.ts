@@ -1,5 +1,5 @@
-import { ApiException } from '../common/errors/api-exception';
-import { DiffFilterService } from './diff-filter.service';
+import { ReviewError } from '../common/errors/review-error.js';
+import { DiffFilterService } from './diff-filter.service.js';
 
 const block = (path: string, headerPath = path): string =>
   `diff --git a/${headerPath} b/${headerPath}\n--- a/${path}\n+++ b/${path}\n@@ -1 +1 @@\n-old\n+new`;
@@ -25,7 +25,7 @@ describe('DiffFilterService', () => {
     'assets/app.min.js',
     'assets/app.js.map',
   ])('removes excluded file %s', (path) => {
-    expect(() => service.filter(block(path))).toThrow(ApiException);
+    expect(() => service.filter(block(path))).toThrow(ReviewError);
   });
 
   it.each(['.env.example', '.env.sample'])('keeps allowed environment template %s', (path) => {

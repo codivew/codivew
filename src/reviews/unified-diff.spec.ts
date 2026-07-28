@@ -1,4 +1,4 @@
-import { parseUnifiedDiff } from './unified-diff';
+import { parseUnifiedDiff } from './unified-diff.js';
 
 describe('parseUnifiedDiff', () => {
   it('parses file hunks and old/new line numbers', () => {

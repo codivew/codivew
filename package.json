@@ -1,61 +1,50 @@
 {
-  "name": "code-review-server",
-  "version": "1.0.0",
-  "private": true,
-  "description": "Stateless AI code review server backed by Ollama",
+  "name": "codivew",
+  "version": "0.0.1",
+  "private": false,
+  "type": "module",
+  "description": "Codivew CLI for local AI code reviews powered by Ollama",
   "license": "UNLICENSED",
+  "bin": {
+    "codivew": "dist/main.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
-    "build": "nest build",
-    "start": "node dist/main.js",
-    "start:dev": "nest start --watch",
-    "pm2:start": "npm run build && pm2 start ecosystem.config.cjs --env production",
-    "pm2:restart": "npm run build && pm2 restart ecosystem.config.cjs --env production --update-env",
-    "pm2:stop": "pm2 stop code-review-server",
-    "pm2:delete": "pm2 delete code-review-server",
-    "pm2:logs": "pm2 logs code-review-server",
-    "pm2:status": "pm2 status",
-    "lint": "eslint \"{src,test}/**/*.ts\"",
-    "format": "prettier --write \"{src,test}/**/*.ts\" \"*.{cjs,json,md,yml}\"",
-    "typecheck": "tsc --noEmit",
-    "test": "jest --config jest.config.ts",
-    "test:e2e": "jest --config test/jest-e2e.config.ts --runInBand"
+    "dev": "node --loader ts-node/esm src/main.ts",
+    "clean": "node scripts/clean-dist.mjs",
+    "prebuild": "npm run clean",
+    "build": "tsc -p tsconfig.build.json",
+    "check": "npm run typecheck && npm run lint && npm test",
+    "typecheck": "tsc --noEmit --incremental false",
+    "lint": "eslint \"src/**/*.ts\"",
+    "format": "prettier --write \"src/**/*.ts\" \"*.{json,md,mjs}\" \"scripts/**/*.mjs\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"*.{json,md,mjs}\" \"scripts/**/*.mjs\"",
+    "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --config jest.config.mjs",
+    "prepack": "npm run check && npm run build"
   },
   "dependencies": {
-    "@fastify/static": "^9.3.0",
-    "@nestjs/common": "^11.1.5",
-    "@nestjs/config": "^4.0.2",
-    "@nestjs/core": "^11.1.5",
-    "@nestjs/platform-fastify": "^11.1.5",
-    "@nestjs/swagger": "^11.4.6",
-    "class-transformer": "^0.5.1",
-    "class-validator": "^0.14.2",
-    "dotenv": "^17.4.2",
-    "pm2": "^7.0.3",
-    "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.2",
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.32.0",
-    "@nestjs/cli": "^11.0.10",
-    "@nestjs/schematics": "^11.0.7",
-    "@nestjs/testing": "^11.1.5",
     "@types/jest": "^30.0.0",
-    "@types/node": "^22.17.0",
+    "@types/node": "^18.19.0",
     "eslint": "^9.32.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.3",
-    "fastify": "^5.4.0",
     "jest": "^30.0.5",
     "prettier": "^3.6.2",
-    "source-map-support": "^0.5.21",
     "ts-jest": "^29.4.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.38.0"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=18.0.0"
   }
 }

@@ -1,4 +1,4 @@
-import { parseReviewResult, reviewResultJsonSchema } from './review-result.schema';
+import { parseReviewResult, reviewResultJsonSchema } from './review-result.schema.js';
 
 const valid = {
   verdict: 'comment',

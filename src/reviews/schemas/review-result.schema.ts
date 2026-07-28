@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import type { ReviewResult } from '../types/review-result';
-import { parseUnifiedDiff } from '../unified-diff';
+import type { ReviewResult } from '../types/review-result.js';
+import { parseUnifiedDiff } from '../unified-diff.js';
 
 const positiveLine = z.number().int().positive();
 

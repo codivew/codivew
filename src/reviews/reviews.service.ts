@@ -1,111 +1,96 @@
 import { randomBytes } from 'node:crypto';
-import { HttpStatus, Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { ZodError } from 'zod';
-import { ERROR_CODES } from '../common/constants/error-codes';
-import { ApiException } from '../common/errors/api-exception';
-import type { CreateReviewDto } from './dto/create-review.dto';
-import { DiffFilterService } from './diff-filter.service';
-import { HtmlRendererService } from './html-renderer.service';
-import { OllamaService } from './ollama.service';
-import { ReviewPromptService } from './review-prompt.service';
-import { ReviewStoreService } from './review-store.service';
-import { parseReviewResult } from './schemas/review-result.schema';
-import type { ReviewResult } from './types/review-result';
+import { ERROR_CODES } from '../common/constants/error-codes.js';
+import { ReviewError } from '../common/errors/review-error.js';
+import { DiffFilterService } from './diff-filter.service.js';
+import { HtmlRendererService } from './html-renderer.service.js';
+import { OllamaService } from './ollama.service.js';
+import { ReviewPromptService } from './review-prompt.service.js';
+import { parseReviewResult } from './schemas/review-result.schema.js';
+import type { ReviewResult } from './types/review-result.js';
+import type { ReviewRequest } from './types/review-request.js';
 
 export type GeneratedReview = {
   reviewId: string;
   verdict: ReviewResult['verdict'];
   issueCount: number;
-  publicUrl: string;
+  reviewedFileCount: number;
+  elapsedMs: number;
+  html: string;
 };
 
-@Injectable()
 export class ReviewsService {
-  private readonly logger = new Logger(ReviewsService.name);
-
   constructor(
-    private readonly config: ConfigService,
+    private readonly maxDiffChars: number,
     private readonly diffFilter: DiffFilterService,
     private readonly prompt: ReviewPromptService,
     private readonly ollama: OllamaService,
     private readonly renderer: HtmlRendererService,
-    private readonly store: ReviewStoreService,
   ) {}
 
-  async createReview(dto: CreateReviewDto): Promise<GeneratedReview> {
+  async createReview(request: ReviewRequest): Promise<GeneratedReview> {
     const startedAt = Date.now();
     const reviewId = randomBytes(9).toString('base64url');
-    const filtered = this.diffFilter.filter(dto.diff);
-    if (filtered.filteredCharCount > this.config.getOrThrow<number>('review.maxDiffChars')) {
-      throw new ApiException(
-        HttpStatus.PAYLOAD_TOO_LARGE,
+    const filtered = this.diffFilter.filter(request.diff);
+
+    if (filtered.filteredCharCount > this.maxDiffChars) {
+      throw new ReviewError(
         ERROR_CODES.DIFF_TOO_LARGE,
-        'Diff가 리뷰 가능한 최대 크기를 초과했습니다.',
+        `필터링된 Diff가 최대 크기 ${this.maxDiffChars}자를 초과했습니다.`,
       );
     }
 
-    let result: ReviewResult;
-    try {
-      const response = await this.ollama.generateReview(this.prompt.build(dto, filtered));
-      result = parseReviewResult(response, filtered.reviewedFiles, filtered.diff);
-    } catch (error) {
-      if (!(error instanceof ZodError) && !this.isModelInvalid(error)) throw error;
-      const reason = this.validationReason(error);
-      try {
-        const response = await this.ollama.generateReview(
-          this.prompt.buildRetry(dto, filtered, reason),
-        );
-        result = parseReviewResult(response, filtered.reviewedFiles, filtered.diff);
-      } catch (retryError) {
-        if (!(retryError instanceof ZodError) && !this.isModelInvalid(retryError)) throw retryError;
-        throw new ApiException(
-          HttpStatus.BAD_GATEWAY,
-          ERROR_CODES.MODEL_RESPONSE_INVALID,
-          '모델 응답 형식이 올바르지 않습니다.',
-        );
-      }
-    }
-
+    const result = await this.generateResult(request, filtered);
     const elapsedMs = Date.now() - startedAt;
-    const publicUrl = `${this.config.getOrThrow<string>('app.publicUrl')}/${reviewId}`;
     const html = this.renderer.render({
       reviewId,
       createdAt: new Date(),
       elapsedMs,
       model: this.ollama.model,
-      publicUrl,
-      request: dto,
+      request,
       filtered,
       result,
     });
-    this.store.set(reviewId, html);
-    this.logger.log({
-      reviewId,
-      repository: dto.repository,
-      mode: dto.mode,
-      model: this.ollama.model,
-      originalFileCount: filtered.originalFileCount,
-      reviewedFileCount: filtered.reviewedFiles.length,
-      originalCharCount: filtered.originalCharCount,
-      filteredCharCount: filtered.filteredCharCount,
-      elapsedMs,
-      verdict: result.verdict,
-      issueCount: result.issues.length,
-    });
+
     return {
       reviewId,
       verdict: result.verdict,
       issueCount: result.issues.length,
-      publicUrl,
+      reviewedFileCount: filtered.reviewedFiles.length,
+      elapsedMs,
+      html,
     };
+  }
+
+  private async generateResult(
+    request: ReviewRequest,
+    filtered: ReturnType<DiffFilterService['filter']>,
+  ): Promise<ReviewResult> {
+    try {
+      const response = await this.ollama.generateReview(this.prompt.build(request, filtered));
+      return parseReviewResult(response, filtered.reviewedFiles, filtered.diff);
+    } catch (error) {
+      if (!this.isModelInvalid(error)) throw error;
+      const response = await this.ollama.generateReview(
+        this.prompt.buildRetry(request, filtered, this.validationReason(error)),
+      );
+      try {
+        return parseReviewResult(response, filtered.reviewedFiles, filtered.diff);
+      } catch (retryError) {
+        if (!this.isModelInvalid(retryError)) throw retryError;
+        throw new ReviewError(
+          ERROR_CODES.MODEL_RESPONSE_INVALID,
+          '두 번의 시도에서 모두 모델 응답 검증에 실패했습니다.',
+          retryError,
+        );
+      }
+    }
   }
 
   private isModelInvalid(error: unknown): boolean {
     return (
-      error instanceof ApiException &&
-      (error.getResponse() as { error?: { code?: string } }).error?.code ===
-        ERROR_CODES.MODEL_RESPONSE_INVALID
+      error instanceof ZodError ||
+      (error instanceof ReviewError && error.code === ERROR_CODES.MODEL_RESPONSE_INVALID)
     );
   }
 

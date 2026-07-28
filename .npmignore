@@ -1,0 +1,34 @@
+# Source and tests
+src/
+test/
+scripts/
+**/*.spec.ts
+
+# Development configuration
+eslint.config.mjs
+jest.config.mjs
+tsconfig.json
+tsconfig.build.json
+
+# Local dependencies and generated files
+node_modules/
+coverage/
+*.tsbuildinfo
+*.log
+*.html
+
+# Local configuration and secrets
+.env
+.env.*
+
+# Repository and editor metadata
+.git/
+.github/
+.vscode/
+.idea/
+.DS_Store
+
+# Package manager metadata not needed at runtime
+package-lock.json
+pnpm-lock.yaml
+yarn.lock

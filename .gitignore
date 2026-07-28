@@ -1,6 +1,5 @@
 node_modules/
 dist/
 coverage/
-.env
 *.html
 !.github/**/*.html

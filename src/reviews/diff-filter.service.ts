@@ -1,6 +1,5 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
-import { ERROR_CODES } from '../common/constants/error-codes';
-import { ApiException } from '../common/errors/api-exception';
+import { ERROR_CODES } from '../common/constants/error-codes.js';
+import { ReviewError } from '../common/errors/review-error.js';
 
 export type FilteredDiffResult = {
   diff: string;
@@ -22,7 +21,6 @@ const SENSITIVE_BASENAMES = new Set(['.env', 'id_rsa', 'id_ed25519']);
 const ALLOWED_ENV_FILES = new Set(['.env.example', '.env.sample']);
 const EXCLUDED_DIRECTORIES = new Set(['dist', 'build', 'coverage', '.next', 'generated']);
 
-@Injectable()
 export class DiffFilterService {
   filter(rawDiff: string): FilteredDiffResult {
     const normalizedDiff = rawDiff.replaceAll('\r\n', '\n');
@@ -38,11 +36,7 @@ export class DiffFilterService {
     }
 
     if (kept.length === 0) {
-      throw new ApiException(
-        HttpStatus.BAD_REQUEST,
-        ERROR_CODES.EMPTY_DIFF,
-        '리뷰할 수 있는 Diff가 없습니다.',
-      );
+      throw new ReviewError(ERROR_CODES.EMPTY_DIFF, '리뷰할 수 있는 Diff가 없습니다.');
     }
 
     const diff = `${kept.map(({ block }) => block).join('\n')}\n`;

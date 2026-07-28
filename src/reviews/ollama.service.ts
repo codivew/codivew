@@ -1,31 +1,31 @@
-import { HttpStatus, Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { ERROR_CODES } from '../common/constants/error-codes';
-import { ApiException } from '../common/errors/api-exception';
-import { reviewResultJsonSchema } from './schemas/review-result.schema';
-import type { ReviewPrompts } from './review-prompt.service';
+import { ERROR_CODES } from '../common/constants/error-codes.js';
+import { ReviewError } from '../common/errors/review-error.js';
+import { reviewResultJsonSchema } from './schemas/review-result.schema.js';
+import type { ReviewPrompts } from './review-prompt.service.js';
 
 type OllamaChatResponse = { message?: { content?: unknown } };
 
-@Injectable()
+export type OllamaOptions = {
+  baseUrl: string;
+  model: string;
+  timeoutMs: number;
+};
+
 export class OllamaService {
-  private readonly logger = new Logger(OllamaService.name);
+  private readonly baseUrl: string;
+  readonly model: string;
 
-  constructor(private readonly config: ConfigService) {}
-
-  get model(): string {
-    return this.config.getOrThrow<string>('ollama.model');
+  constructor(private readonly options: OllamaOptions) {
+    this.baseUrl = options.baseUrl.replace(/\/$/, '');
+    this.model = options.model;
   }
 
   async generateReview(prompts: ReviewPrompts): Promise<unknown> {
-    const startedAt = Date.now();
     const controller = new AbortController();
-    const timeout = setTimeout(
-      () => controller.abort(),
-      this.config.getOrThrow<number>('ollama.timeoutMs'),
-    );
+    const timeout = setTimeout(() => controller.abort(), this.options.timeoutMs);
+
     try {
-      const response = await fetch(`${this.config.getOrThrow<string>('ollama.baseUrl')}/api/chat`, {
+      const response = await fetch(`${this.baseUrl}/api/chat`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
@@ -40,113 +40,43 @@ export class OllamaService {
         }),
         signal: controller.signal,
       });
+
       if (!response.ok) {
-        this.logger.warn({
-          event: 'ollama_request_failed',
-          reason: 'http_error',
-          model: this.model,
-          statusCode: response.status,
-          elapsedMs: Date.now() - startedAt,
-        });
-        throw this.unavailable();
+        throw new ReviewError(
+          ERROR_CODES.OLLAMA_UNAVAILABLE,
+          `Ollama 요청에 실패했습니다. (HTTP ${response.status})`,
+        );
       }
+
       let body: OllamaChatResponse;
       try {
         body = (await response.json()) as OllamaChatResponse;
       } catch {
-        this.logger.warn({
-          event: 'ollama_request_failed',
-          reason: 'response_body_read_failed',
-          model: this.model,
-          statusCode: response.status,
-          elapsedMs: Date.now() - startedAt,
-        });
-        throw this.unavailable();
+        throw this.invalidResponse();
       }
-      if (typeof body.message?.content !== 'string') {
-        this.logInvalidModelResponse('message_content_missing', startedAt);
-        throw new ApiException(
-          HttpStatus.BAD_GATEWAY,
-          ERROR_CODES.MODEL_RESPONSE_INVALID,
-          '모델 응답 형식이 올바르지 않습니다.',
-        );
-      }
+
+      if (typeof body.message?.content !== 'string') throw this.invalidResponse();
+
       try {
-        const result = JSON.parse(body.message.content) as unknown;
-        this.logger.log({
-          event: 'ollama_request_completed',
-          model: this.model,
-          elapsedMs: Date.now() - startedAt,
-        });
-        return result;
+        return JSON.parse(body.message.content) as unknown;
       } catch {
-        this.logInvalidModelResponse('message_content_not_json', startedAt);
-        throw new ApiException(
-          HttpStatus.BAD_GATEWAY,
-          ERROR_CODES.MODEL_RESPONSE_INVALID,
-          '모델 응답 형식이 올바르지 않습니다.',
-        );
+        throw this.invalidResponse();
       }
     } catch (error) {
-      if (error instanceof ApiException) throw error;
-      this.logger.error({
-        event: 'ollama_request_failed',
-        reason: controller.signal.aborted ? 'timeout' : 'network_error',
-        model: this.model,
-        elapsedMs: Date.now() - startedAt,
-      });
-      throw this.unavailable();
+      if (error instanceof ReviewError) throw error;
+      const message = controller.signal.aborted
+        ? `Ollama 응답 시간이 ${this.options.timeoutMs}ms를 초과했습니다.`
+        : `Ollama에 연결할 수 없습니다: ${this.baseUrl}`;
+      throw new ReviewError(ERROR_CODES.OLLAMA_UNAVAILABLE, message, error);
     } finally {
       clearTimeout(timeout);
     }
   }
 
-  async isReady(): Promise<boolean> {
-    const startedAt = Date.now();
-    const controller = new AbortController();
-    const timeout = setTimeout(
-      () => controller.abort(),
-      this.config.getOrThrow<number>('ollama.readyTimeoutMs'),
+  private invalidResponse(): ReviewError {
+    return new ReviewError(
+      ERROR_CODES.MODEL_RESPONSE_INVALID,
+      'Ollama가 올바른 JSON 리뷰 결과를 반환하지 않았습니다.',
     );
-    try {
-      const response = await fetch(`${this.config.getOrThrow<string>('ollama.baseUrl')}/api/tags`, {
-        signal: controller.signal,
-      });
-      if (!response.ok) {
-        this.logger.warn({
-          event: 'ollama_readiness_failed',
-          reason: 'http_error',
-          statusCode: response.status,
-          elapsedMs: Date.now() - startedAt,
-        });
-      }
-      return response.ok;
-    } catch {
-      this.logger.warn({
-        event: 'ollama_readiness_failed',
-        reason: controller.signal.aborted ? 'timeout' : 'network_error',
-        elapsedMs: Date.now() - startedAt,
-      });
-      return false;
-    } finally {
-      clearTimeout(timeout);
-    }
-  }
-
-  private unavailable(): ApiException {
-    return new ApiException(
-      HttpStatus.SERVICE_UNAVAILABLE,
-      ERROR_CODES.OLLAMA_UNAVAILABLE,
-      'AI 리뷰 서비스에 연결할 수 없습니다.',
-    );
-  }
-
-  private logInvalidModelResponse(reason: string, startedAt: number): void {
-    this.logger.warn({
-      event: 'ollama_model_response_invalid',
-      reason,
-      model: this.model,
-      elapsedMs: Date.now() - startedAt,
-    });
   }
 }
