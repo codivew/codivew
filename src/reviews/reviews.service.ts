@@ -3,12 +3,12 @@ import { ZodError } from 'zod';
 import { ERROR_CODES } from '../common/constants/error-codes.js';
 import { ReviewError } from '../common/errors/review-error.js';
 import { DiffFilterService } from './diff-filter.service.js';
-import { HtmlRendererService } from './html-renderer.service.js';
 import { OllamaService } from './ollama.service.js';
 import { ReviewPromptService } from './review-prompt.service.js';
 import { parseReviewResult } from './schemas/review-result.schema.js';
 import type { ReviewResult } from './types/review-result.js';
 import type { ReviewRequest } from './types/review-request.js';
+import type { ReviewRenderer } from './types/review-renderer.js';
 
 export type GeneratedReview = {
   reviewId: string;
@@ -25,7 +25,7 @@ export class ReviewsService {
     private readonly diffFilter: DiffFilterService,
     private readonly prompt: ReviewPromptService,
     private readonly ollama: OllamaService,
-    private readonly renderer: HtmlRendererService,
+    private readonly renderer: ReviewRenderer,
   ) {}
 
   async createReview(request: ReviewRequest): Promise<GeneratedReview> {

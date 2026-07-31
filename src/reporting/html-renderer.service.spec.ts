@@ -1,5 +1,5 @@
 import { HtmlRendererService } from './html-renderer.service.js';
-import { ReviewMode } from './types/review-request.js';
+import { ReviewMode } from '../reviews/types/review-request.js';
 
 describe('HtmlRendererService', () => {
   const renderer = new HtmlRendererService();
@@ -38,11 +38,12 @@ describe('HtmlRendererService', () => {
       },
     });
     expect(html).toContain('550e8400-e29b-41d4-a716-446655440000');
-    expect(html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
-    expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;');
-    expect(html).toContain('&lt;script&gt;bad()&lt;/script&gt;');
+    expect(html).toContain('&lt;script>alert(1)&lt;/script>');
+    expect(html).toContain('&lt;img src=x onerror=alert(1)>');
+    expect(html).toContain('&lt;script>bad()&lt;/script>');
     expect(html).not.toMatch(/<script[\s>]/i);
     expect(html).not.toMatch(/(?:src|href)=["']https?:/i);
+    expect(html).toContain('<style>/*! tailwindcss');
   });
 
   it('renders empty states and omits absent optional fields', () => {
@@ -64,8 +65,8 @@ describe('HtmlRendererService', () => {
     });
     expect(html.match(/발견된 문제가 없습니다\./g)).toHaveLength(1);
     expect(html).not.toContain('커밋 SHA</dt>');
-    expect(html).toContain('<dt>리뷰 모드</dt><dd class="">작업 트리</dd>');
-    expect(html).toContain('<dt>처리 시간</dt><dd class="">0.0초</dd>');
+    expect(html).toContain('작업 트리');
+    expect(html).toMatch(/<dt class="[^"]*">처리 시간<\/dt><dd class="[^"]*">0\.0초<\/dd>/);
   });
 
   it('renders a numbered diff and links feedback to its code line', () => {
@@ -109,23 +110,25 @@ describe('HtmlRendererService', () => {
       },
     });
 
-    expect(html).toContain('src/app.ts · 4번째 줄 → 코드 보기');
+    expect(html).toContain('src/app.ts · 4번째 줄');
+    expect(html).toContain('코드 보기 →');
     expect(html).toContain('href="#diff-0-L4"');
     expect(html).toContain('id="diff-0-L4"');
-    expect(html).toContain('class="addition"');
-    expect(html).toContain('class="deletion"');
+    expect(html).toContain('class="addition ');
+    expect(html).toContain('class="deletion ');
     expect(html).toContain('class="inline-feedback"');
-    expect(html).toContain('<a class="inline-note" href="#feedback-0">');
+    expect(html).toMatch(/<a class="inline-note [^"]+" href="#feedback-0">/);
     expect(html).toContain('href="#feedback-0"');
     expect(html).toContain('상세 보기 ↑');
     expect(html.match(/새 값이 올바른지 확인하세요\./g)).toHaveLength(1);
-    expect(html).toContain('<col class="line-col"><col class="line-col"><col class="sign-col">');
-    expect(html).toContain('class="overview-layout"');
-    expect(html).toContain('<details class="diff-file" id="diff-file-0" open>');
-    expect(html).toContain('변경 2줄 · 피드백 1개');
-    expect(html).toContain('<section><h2>수정 권장</h2>');
-    expect(html).not.toContain('<section><h2>필수 수정</h2>');
-    expect(html).not.toContain('<section><h2>제안</h2>');
+    expect(html.match(/<col class="line-col /g)).toHaveLength(2);
+    expect(html).toContain('class="overview-layout ');
+    expect(html).toMatch(/<details class="diff-file [^"]+" id="diff-file-0" open>/);
+    expect(html).toContain('변경 2줄');
+    expect(html).toContain('피드백 1개');
+    expect(html).toMatch(/<h2 class="[^"]+">수정 권장<\/h2>/);
+    expect(html).not.toMatch(/<h2 class="[^"]+">필수 수정<\/h2>/);
+    expect(html).not.toMatch(/<h2 class="[^"]+">제안<\/h2>/);
   });
 
   it('collapses long file diffs by default', () => {
@@ -156,9 +159,10 @@ ${additions}
       result: { verdict: 'approve', risk: 'low', summary: '좋습니다.', issues: [], tests: [] },
     });
 
-    expect(html).toContain('<details class="diff-file" id="diff-file-0">');
-    expect(html).not.toContain('<details class="diff-file" id="diff-file-0" open>');
-    expect(html).toContain('변경 41줄 · 피드백 0개');
-    expect(html).toContain('<summary class="diff-file-header">');
+    expect(html).toMatch(/<details class="diff-file [^"]+" id="diff-file-0">/);
+    expect(html).not.toMatch(/<details class="diff-file [^"]+" id="diff-file-0" open>/);
+    expect(html).toContain('변경 41줄');
+    expect(html).toContain('피드백 0개');
+    expect(html).toContain('<summary class="diff-file-header ');
   });
 });

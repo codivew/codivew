@@ -1,10 +1,10 @@
 {
   "name": "codivew",
-  "version": "0.0.5",
+  "version": "0.1.0",
   "private": false,
   "type": "module",
   "description": "Codivew CLI for local AI code reviews powered by Ollama",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "bin": {
     "codivew": "dist/main.js"
   },
@@ -17,21 +17,28 @@
   "scripts": {
     "dev": "node --loader ts-node/esm src/main.ts",
     "clean": "node scripts/clean-dist.mjs",
-    "prebuild": "npm run clean",
+    "generate:report-style": "tailwindcss -i ./src/reporting/report.css -o ./.report-style.tmp.css --minify && node scripts/generate-report-style.mjs",
+    "predev": "npm run generate:report-style",
+    "prebuild": "npm run clean && npm run generate:report-style",
     "build": "tsc -p tsconfig.build.json",
     "check": "npm run typecheck && npm run lint && npm test",
+    "pretypecheck": "npm run generate:report-style",
     "typecheck": "tsc --noEmit --incremental false",
-    "lint": "eslint \"src/**/*.ts\"",
-    "format": "prettier --write \"src/**/*.ts\" \"*.{json,md,mjs}\" \"scripts/**/*.mjs\"",
-    "format:check": "prettier --check \"src/**/*.ts\" \"*.{json,md,mjs}\" \"scripts/**/*.mjs\"",
+    "lint": "eslint \"src/**/*.{ts,tsx}\"",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"*.{json,md,mjs}\" \"scripts/**/*.mjs\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"*.{json,md,mjs}\" \"scripts/**/*.mjs\"",
+    "pretest": "npm run generate:report-style",
     "test": "jest --config jest.config.mjs",
     "prepack": "npm run check && npm run build"
   },
   "dependencies": {
+    "preact": "^10.29.7",
+    "preact-render-to-string": "^6.7.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
+    "@tailwindcss/cli": "^4.3.3",
     "@types/jest": "^30.0.0",
     "@types/node": "^18.19.0",
     "eslint": "^9.32.0",
@@ -39,6 +46,7 @@
     "eslint-plugin-prettier": "^5.5.3",
     "jest": "^30.0.5",
     "prettier": "^3.6.2",
+    "tailwindcss": "^4.3.3",
     "ts-jest": "^29.4.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2",

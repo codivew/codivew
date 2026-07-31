@@ -1,15 +1,17 @@
 /** @type {import('jest').Config} */
 const config = {
-  moduleFileExtensions: ['js', 'json', 'ts'],
+  moduleFileExtensions: ['js', 'json', 'ts', 'tsx'],
   rootDir: '.',
   testRegex: 'src/.*\\.spec\\.ts$',
   transform: {
-    '^.+\\.ts$': [
+    '^.+\\.tsx?$': [
       'ts-jest',
       {
         tsconfig: {
           module: 'CommonJS',
           moduleResolution: 'Node',
+          jsx: 'react-jsx',
+          jsxImportSource: 'preact',
         },
       },
     ],
@@ -17,7 +19,7 @@ const config = {
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
-  collectCoverageFrom: ['src/**/*.ts', '!src/main.ts'],
+  collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/main.ts'],
   coverageDirectory: 'coverage',
   testEnvironment: 'node',
 };

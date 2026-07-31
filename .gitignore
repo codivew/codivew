@@ -4,3 +4,4 @@ coverage/
 *.html
 !.github/**/*.html
 .codivew/
+.report-style.tmp.css

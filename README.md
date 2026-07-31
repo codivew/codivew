@@ -224,9 +224,16 @@ npm run typecheck
 npm run lint
 npm test
 npm run format:check
+npm run generate:report-style
 npm run build
 npm run check
 ```
+
+`generate:report-style`은 리포트 렌더러에서 사용하는 Tailwind 유틸리티만 CSS로
+컴파일하고, 최종 HTML의 `<style>`에 삽입할 TypeScript 모듈을 생성합니다. `dev`,
+`typecheck`, `test`, `build` 실행 전에는 이 과정이 자동으로 수행됩니다.
+리포트 본문은 `src/reporting/review-report.tsx`의 Preact JSX 컴포넌트를 서버에서 문자열로
+렌더링하며, 리뷰 데이터는 JSX escaping을 거쳐 출력됩니다.
 
 배포 패키지에 포함될 파일은 다음 명령으로 확인할 수 있습니다.
 

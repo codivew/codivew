@@ -1,11 +1,11 @@
 import { jest } from '@jest/globals';
 import { ReviewError } from '../common/errors/review-error.js';
 import { DiffFilterService } from './diff-filter.service.js';
-import { HtmlRendererService } from './html-renderer.service.js';
 import { OllamaService } from './ollama.service.js';
 import { ReviewPromptService } from './review-prompt.service.js';
 import { ReviewsService } from './reviews.service.js';
 import { ReviewMode, type ReviewRequest } from './types/review-request.js';
+import type { ReviewRenderer } from './types/review-renderer.js';
 
 const diff = `diff --git a/src/app.ts b/src/app.ts
 --- a/src/app.ts
@@ -18,7 +18,7 @@ const valid = { verdict: 'approve', risk: 'low', summary: '좋습니다.', issue
 
 describe('ReviewsService', () => {
   const renderer = {
-    render: jest.fn<HtmlRendererService['render']>().mockReturnValue('<html></html>'),
+    render: jest.fn<ReviewRenderer['render']>().mockReturnValue('<html></html>'),
   };
   const ollama = {
     model: 'qwen',
@@ -30,7 +30,7 @@ describe('ReviewsService', () => {
       new DiffFilterService(),
       new ReviewPromptService(),
       ollama as unknown as OllamaService,
-      renderer as unknown as HtmlRendererService,
+      renderer,
     );
 
   beforeEach(() => jest.clearAllMocks());
