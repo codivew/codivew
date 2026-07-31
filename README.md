@@ -1,141 +1,141 @@
 # Codivew
 
+English | [한국어](./docs/README.ko.md)
+
 [![npm version](https://img.shields.io/npm/v/codivew.svg)](https://www.npmjs.com/package/codivew)
 [![npm downloads](https://img.shields.io/npm/dm/codivew.svg)](https://www.npmjs.com/package/codivew)
 [![license](https://img.shields.io/npm/l/codivew.svg)](https://github.com/knsan189/codivew/blob/main/LICENSE)
 
-Codivew는 Git 변경사항을 Ollama 코딩 모델로 검토하고, 파일별 피드백과 diff가 포함된 독립 실행형 HTML 리포트를 생성하는 CLI입니다. 별도 서버나 데이터베이스 없이 로컬에서 실행됩니다.
+Codivew is a CLI that reviews Git changes with an Ollama coding model and generates a standalone HTML report containing file-level feedback and diffs. It runs entirely locally without a separate server or database.
 
-- 엔진: **Codivew Engine**
-- 명령어: `codivew`
-- npm 패키지: `codivew`
+- Engine: **Codivew Engine**
+- Command: `codivew`
+- npm package: `codivew`
 
-## 주요 기능
+## Features
 
-- working tree, staged 변경사항 및 브랜치 간 diff 리뷰
-- 별도 서버 없이 사용자가 선택한 Ollama 모델로 로컬 리뷰
-- 리뷰 요약과 파일 및 변경 라인별 피드백 제공
-- 긴 변경 코드를 파일별로 접고 펼칠 수 있는 HTML 리포트
-- 민감 파일과 리뷰에 불필요한 생성 파일 자동 제외
-- 결과 자동 저장 및 브라우저 열기
-- macOS, Linux, Windows 지원
+- Review working tree changes, staged changes, or diffs between branches
+- Run reviews locally with any Ollama model you choose, without a separate server
+- Get a review summary and feedback by file and changed line
+- Browse long changes in a collapsible, file-by-file HTML report
+- Automatically exclude sensitive files and generated files that are not useful for review
+- Save results automatically and open them in your browser
+- Support for macOS, Linux, and Windows
 
-## 요구사항
+## Requirements
 
-- Node.js 18 이상
+- Node.js 18 or later
 - Git
-- 로컬 또는 네트워크에서 접근 가능한 Ollama
+- Ollama available locally or over the network
 
-리뷰에 사용할 모델을 Ollama에 먼저 설치하세요.
+Pull the model you want to use before starting a review.
 
 ```bash
 ollama pull qwen3.6:35b-a3b-coding-mxfp8
 ```
 
-## 설치
+## Installation
 
 ```bash
 npm install -g codivew
 codivew setup
 ```
 
-업데이트할 때는 최신 버전을 다시 전역 설치합니다.
+To update Codivew, install the latest version globally again.
 
 ```bash
 npm install -g codivew@latest
 ```
 
-Codivew는 실행 시 하루에 한 번 `latest` 버전을 확인하고, 새 버전이 있으면 명령 종료 후
-업데이트 방법을 안내합니다. 이번 실행에서 확인하지 않으려면 `--no-update-notifier`를
-사용하고, 항상 끄려면 `NO_UPDATE_NOTIFIER=1` 환경 변수를 설정합니다.
+Codivew checks the `latest` version once a day when it runs. If a newer version is available, it prints update instructions after the command finishes. Use `--no-update-notifier` to skip the check for the current run, or set `NO_UPDATE_NOTIFIER=1` to disable it permanently.
 
-## 초기 설정
+## Initial Setup
 
 ```bash
 codivew setup
 ```
 
-`setup`은 Ollama URL에 연결하여 설치된 모델을 조회하고, 선택한 URL과 모델을 사용자 설정 파일에 저장합니다.
+`setup` connects to your Ollama URL, retrieves the installed models, and saves the selected URL and model to your user configuration file.
 
 ```text
-Codivew 초기 설정
+Codivew initial setup
 
 Ollama URL (http://localhost:11434):
-  ✓ 연결됨 · 모델 2개
+  ✓ Connected · 2 models
 
-사용할 모델:
+Model to use:
   1. qwen3.6:35b-a3b-coding-mxfp8
   2. qwen2.5-coder:14b
-선택 (1):
+Select (1):
 ```
 
-설정 파일 위치:
+Configuration file locations:
 
-| 운영체제 | 경로                                                |
-| -------- | --------------------------------------------------- |
-| macOS    | `~/Library/Application Support/Codivew/config.json` |
-| Linux    | `${XDG_CONFIG_HOME:-~/.config}/codivew/config.json` |
-| Windows  | `%APPDATA%\Codivew\config.json`                     |
+| Operating system | Path                                                |
+| ---------------- | --------------------------------------------------- |
+| macOS            | `~/Library/Application Support/Codivew/config.json` |
+| Linux            | `${XDG_CONFIG_HOME:-~/.config}/codivew/config.json` |
+| Windows          | `%APPDATA%\Codivew\config.json`                     |
 
-대화형 터미널에서 설정 없이 리뷰를 처음 실행하면 `setup`이 자동으로 시작됩니다. CI처럼 비대화형으로 실행할 때는 저장된 설정을 준비하거나 `--ollama-url`과 `--model`을 모두 지정해야 합니다.
+If you start your first review in an interactive terminal without saved configuration, `setup` starts automatically. In a non-interactive environment such as CI, prepare a saved configuration or specify both `--ollama-url` and `--model`.
 
-설정 적용 우선순위는 CLI 옵션 → 사용자 설정 파일 → 기본값입니다.
+Configuration precedence is: CLI options → user configuration file → defaults.
 
-## 사용법
+## Usage
 
-Codivew는 현재 디렉터리에서 상위로 올라가며 Git 저장소 루트를 찾습니다.
+Codivew searches upward from the current directory to find the Git repository root.
 
 ```bash
-# unstaged 변경사항과 Git이 아직 추적하지 않는 새 파일
+# Unstaged changes and new files not yet tracked by Git
 codivew
 codivew working
 
-# git add로 staged 상태가 된 변경사항
+# Changes staged with git add
 codivew staged
 
-# main과 현재 HEAD 사이의 변경사항
+# Changes between main and the current HEAD
 codivew branch
 
-# 다른 기준 브랜치와 현재 HEAD 비교
+# Compare the current HEAD with another base branch
 codivew branch --base develop
 ```
 
-리뷰에 프로젝트 문맥을 추가할 수 있습니다. `--context`는 최대 20번까지 사용할 수 있습니다.
+You can add project context to a review. `--context` may be used up to 20 times.
 
 ```bash
 codivew staged \
-  --context "Node.js CLI 프로젝트" \
-  --context "Node.js 18 이상을 지원해야 함"
+  --context "Node.js CLI project" \
+  --context "Must support Node.js 18 or later"
 ```
 
-### 결과 파일
+### Output Files
 
-기본 결과 파일은 명령을 실행한 디렉터리의 `.codivew/`에 저장되고 브라우저에서 자동으로 열립니다.
+By default, reports are saved in `.codivew/` under the directory where the command was run and opened automatically in your browser.
 
 ```text
 .codivew/
 └── codivew-20260728-140509.html
 ```
 
-같은 초에 파일이 이미 있으면 `codivew-20260728-140509-001.html`처럼 순번을 붙여 기존 결과를 보존합니다. 프로젝트의 `.gitignore`에는 다음 항목을 추가하는 것을 권장합니다.
+If a file with the same timestamp already exists, Codivew appends a sequence number such as `codivew-20260728-140509-001.html` to preserve the existing report. We recommend adding the following entry to your project's `.gitignore`:
 
 ```gitignore
 .codivew/
 ```
 
-브라우저를 열지 않으려면 `--silent`를 사용합니다.
+Use `--silent` to prevent the browser from opening.
 
 ```bash
 codivew staged --silent
 ```
 
-저장 경로를 직접 지정할 수도 있습니다. `.html` 확장자를 생략하면 자동으로 추가됩니다.
+You can also choose the output path. If the `.html` extension is omitted, it is added automatically.
 
 ```bash
 codivew staged --output ./reports/review.html
 ```
 
-### 설정 확인 및 변경
+### Viewing and Updating Configuration
 
 ```bash
 codivew config show
@@ -143,7 +143,7 @@ codivew config set ollama-url http://localhost:11434
 codivew config set model qwen3.6:35b-a3b-coding-mxfp8
 ```
 
-저장된 설정을 변경하지 않고 이번 실행에서만 다른 Ollama나 모델을 사용할 수도 있습니다.
+You can use a different Ollama server or model for a single run without modifying the saved configuration.
 
 ```bash
 codivew staged \
@@ -151,74 +151,74 @@ codivew staged \
   --model qwen3.6:35b-a3b-coding-mxfp8
 ```
 
-## 리뷰 모드
+## Review Modes
 
-| 모드      | Git 비교 기준               | 기본값 |
-| --------- | --------------------------- | ------ |
-| `working` | `git diff` + untracked 파일 | 예     |
-| `staged`  | `git diff --cached`         | 아니요 |
-| `branch`  | `git diff <base>...HEAD`    | 아니요 |
+| Mode      | Git comparison               | Default |
+| --------- | ---------------------------- | ------- |
+| `working` | `git diff` + untracked files | Yes     |
+| `staged`  | `git diff --cached`          | No      |
+| `branch`  | `git diff <base>...HEAD`     | No      |
 
-모든 모드는 rename을 포함한 추가·수정·이름 변경 파일을 대상으로 합니다. `working` 모드는 `.gitignore`에 포함되지 않은 untracked 파일도 리뷰합니다.
+All modes review added, modified, and renamed files. `working` also reviews untracked files that are not excluded by `.gitignore`.
 
-## 전체 명령어
+## Command Reference
 
 ```text
 Usage: codivew [working|staged|branch] [options]
 
 Commands:
-  setup                 Ollama 연결과 모델을 대화형으로 설정
-  config show           저장된 사용자 설정 표시
-  config set <key> <v>  ollama-url 또는 model 설정
+  setup                 Configure the Ollama connection and model interactively
+  config show           Show the saved user configuration
+  config set <key> <v>  Set ollama-url or model
 
 Modes:
-  working               작업 트리 변경사항 리뷰 (기본값)
-  staged                스테이징된 변경사항 리뷰
-  branch                기준 브랜치와 HEAD 사이 변경사항 리뷰
+  working               Review working tree changes (default)
+  staged                Review staged changes
+  branch                Review changes between a base branch and HEAD
 
 Options:
-  -b, --base <branch>    branch 모드 기준 브랜치 (기본값: main)
-  -c, --context <text>   프로젝트 설명 추가, 여러 번 사용 가능
-  -o, --output <path>    HTML 결과 파일 경로
-      --silent           브라우저를 열지 않기
-      --no-update-notifier 업데이트 알림을 이번 실행에서 끄기
-      --ollama-url <url> 이번 실행에서 사용할 Ollama URL
-      --model <name>     이번 실행에서 사용할 모델
-  -h, --help             도움말 표시
-  -v, --version          버전 표시
+  -b, --base <branch>    Base branch for branch mode (default: main)
+  -c, --context <text>   Add project context; may be used multiple times
+  -o, --output <path>    HTML output file path
+      --silent           Do not open the browser
+      --no-update-notifier Disable the update notification for this run
+      --ollama-url <url> Ollama URL for this run
+      --model <name>     Model for this run
+  -h, --help             Show help
+  -v, --version          Show version
 ```
 
-## 리뷰 대상에서 제외되는 파일
+## Excluded Files
 
-Codivew는 모델에 불필요하거나 민감할 가능성이 높은 diff를 자동으로 제외합니다.
+Codivew automatically excludes diffs that are likely to be sensitive or not useful to the model.
 
-- npm, pnpm, Yarn, Bun lockfile
-- `dist`, `build`, `coverage`, `.next`, `generated` 디렉터리
-- `.env`, `.env.*`, 개인 키와 인증서 파일
-- minified JavaScript와 source map
+- npm, pnpm, Yarn, and Bun lockfiles
+- `dist`, `build`, `coverage`, `.next`, and `generated` directories
+- `.env`, `.env.*`, private keys, and certificate files
+- Minified JavaScript and source maps
 
-`.env.example`과 `.env.sample`은 리뷰 대상에 포함됩니다. 제외 후 리뷰할 diff가 남지 않으면 오류로 종료합니다.
+`.env.example` and `.env.sample` remain included. Codivew exits with an error if no reviewable diff remains after exclusions.
 
-## 처리 흐름
+## How It Works
 
 ```text
-Git diff 생성
-  → 제외 대상 파일 필터링
-  → Codivew Engine 프롬프트 생성
-  → Ollama 리뷰 요청 및 결과 검증
-  → HTML 리포트 렌더링
-  → .codivew/에 저장
-  → 브라우저에서 열기
+Generate Git diff
+  → Filter excluded files
+  → Build the Codivew Engine prompt
+  → Request and validate an Ollama review
+  → Render an HTML report
+  → Save it under .codivew/
+  → Open it in the browser
 ```
 
-## 소스에서 실행
+## Running from Source
 
 ```bash
 npm install
 npm run dev -- --help
 ```
 
-전역 명령어처럼 테스트하려면 빌드 후 npm link를 사용합니다.
+To test Codivew as a global command, build it and use `npm link`.
 
 ```bash
 npm run build
@@ -226,7 +226,7 @@ npm link
 codivew --version
 ```
 
-## 개발 명령어
+## Development Commands
 
 ```bash
 npm run typecheck
@@ -238,13 +238,9 @@ npm run build
 npm run check
 ```
 
-`generate:report-style`은 리포트 렌더러에서 사용하는 Tailwind 유틸리티만 CSS로
-컴파일하고, 최종 HTML의 `<style>`에 삽입할 TypeScript 모듈을 생성합니다. `dev`,
-`typecheck`, `test`, `build` 실행 전에는 이 과정이 자동으로 수행됩니다.
-리포트 본문은 `src/reporting/review-report.tsx`의 Preact JSX 컴포넌트를 서버에서 문자열로
-렌더링하며, 리뷰 데이터는 JSX escaping을 거쳐 출력됩니다.
+`generate:report-style` compiles only the Tailwind utilities used by the report renderer and generates the TypeScript module embedded in the final HTML `<style>` element. This runs automatically before `dev`, `typecheck`, `test`, and `build`. The report body is rendered to a string on the server from the Preact JSX components in `src/reporting/review-report.tsx`, and review data is escaped by JSX.
 
-배포 패키지에 포함될 파일은 다음 명령으로 확인할 수 있습니다.
+Check which files will be included in the published package with:
 
 ```bash
 npm pack --dry-run
