@@ -41,6 +41,10 @@ codivew setup
 npm install -g codivew@latest
 ```
 
+Codivew는 실행 시 하루에 한 번 `latest` 버전을 확인하고, 새 버전이 있으면 명령 종료 후
+업데이트 방법을 안내합니다. 이번 실행에서 확인하지 않으려면 `--no-update-notifier`를
+사용하고, 항상 끄려면 `NO_UPDATE_NOTIFIER=1` 환경 변수를 설정합니다.
+
 ## 초기 설정
 
 ```bash
@@ -173,6 +177,7 @@ Options:
   -c, --context <text>   프로젝트 설명 추가, 여러 번 사용 가능
   -o, --output <path>    HTML 결과 파일 경로
       --silent           브라우저를 열지 않기
+      --no-update-notifier 업데이트 알림을 이번 실행에서 끄기
       --ollama-url <url> 이번 실행에서 사용할 Ollama URL
       --model <name>     이번 실행에서 사용할 모델
   -h, --help             도움말 표시

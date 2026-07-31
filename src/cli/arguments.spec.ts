@@ -62,4 +62,8 @@ describe('parseArguments', () => {
     expect(() => parseArguments(['--unknown'])).toThrow('알 수 없는 인자입니다');
     expect(() => parseArguments(['--open'])).toThrow('알 수 없는 인자입니다');
   });
+
+  it('accepts the update notification opt-out flag', () => {
+    expect(parseArguments(['--no-update-notifier', '--version'])).toEqual({ kind: 'version' });
+  });
 });

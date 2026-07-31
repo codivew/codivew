@@ -43,6 +43,7 @@ export function parseArguments(args: readonly string[]): CliCommand {
     const argument = args[index];
     if (argument === '--help' || argument === '-h') return { kind: 'help' };
     if (argument === '--version' || argument === '-v') return { kind: 'version' };
+    if (argument === '--no-update-notifier') continue;
     if (argument === '--silent') {
       options.silent = true;
       continue;

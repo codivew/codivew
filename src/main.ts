@@ -7,6 +7,7 @@ import { setConfig, showConfig } from './cli/config-command.js';
 import { createGitReviewInput } from './cli/git.js';
 import { openReport, writeReport } from './cli/report.js';
 import { runSetup } from './cli/setup.js';
+import { scheduleUpdateNotification } from './cli/update-notification.js';
 import { ERROR_CODES } from './common/constants/error-codes.js';
 import { ReviewError } from './common/errors/review-error.js';
 import { hasConfiguredRuntimeConfig, resolveRuntimeConfig } from './config/runtime-config.js';
@@ -19,9 +20,10 @@ import { ReviewsService } from './reviews/reviews.service.js';
 import { ReviewMode, type ReviewRequest } from './reviews/types/review-request.js';
 
 const loadModule = createRequire(import.meta.url);
-const { version } = loadModule('../package.json') as { version: string };
+const { name, version } = loadModule('../package.json') as { name: string; version: string };
 
 async function main(): Promise<void> {
+  await scheduleUpdateNotification({ name, version });
   const command = parseArguments(process.argv.slice(2));
   if (command.kind === 'help') {
     process.stdout.write(usage());
@@ -180,6 +182,7 @@ Options:
   -c, --context <text>   프로젝트 설명 추가, 여러 번 사용 가능
   -o, --output <path>    HTML 결과 파일 경로
       --silent           브라우저를 열지 않기
+      --no-update-notifier 업데이트 알림을 이번 실행에서 끄기
       --ollama-url <url> 이번 실행에서 사용할 Ollama URL
       --model <name>     이번 실행에서 사용할 모델
   -h, --help             도움말 표시

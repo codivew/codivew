@@ -1,6 +1,6 @@
 {
   "name": "codivew",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": false,
   "type": "module",
   "description": "Codivew CLI for local AI code reviews powered by Ollama",
@@ -34,6 +34,7 @@
   "dependencies": {
     "preact": "^10.29.7",
     "preact-render-to-string": "^6.7.0",
+    "update-notifier": "^7.3.1",
     "zod": "^3.25.76"
   },
   "devDependencies": {
@@ -41,6 +42,7 @@
     "@tailwindcss/cli": "^4.3.3",
     "@types/jest": "^30.0.0",
     "@types/node": "^18.19.0",
+    "@types/update-notifier": "^6.0.8",
     "eslint": "^9.32.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.3",
