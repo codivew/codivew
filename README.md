@@ -1,5 +1,9 @@
 # Codivew
 
+[![npm version](https://img.shields.io/npm/v/codivew.svg)](https://www.npmjs.com/package/codivew)
+[![npm downloads](https://img.shields.io/npm/dm/codivew.svg)](https://www.npmjs.com/package/codivew)
+[![license](https://img.shields.io/npm/l/codivew.svg)](https://github.com/knsan189/codivew/blob/main/LICENSE)
+
 Codivew는 Git 변경사항을 Ollama 코딩 모델로 검토하고, 파일별 피드백과 diff가 포함된 독립 실행형 HTML 리포트를 생성하는 CLI입니다. 별도 서버나 데이터베이스 없이 로컬에서 실행됩니다.
 
 - 엔진: **Codivew Engine**

@@ -4,7 +4,23 @@
   "private": false,
   "type": "module",
   "description": "Codivew CLI for local AI code reviews powered by Ollama",
+  "keywords": [
+    "code-review",
+    "cli",
+    "ollama",
+    "ai",
+    "git"
+  ],
+  "author": "knsan189",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/knsan189/codivew.git"
+  },
+  "homepage": "https://github.com/knsan189/codivew#readme",
+  "bugs": {
+    "url": "https://github.com/knsan189/codivew/issues"
+  },
   "bin": {
     "codivew": "dist/main.js"
   },
