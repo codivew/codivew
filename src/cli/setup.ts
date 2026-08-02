@@ -9,6 +9,7 @@ import {
   saveUserConfig,
   type UserConfig,
 } from '../config/user-config.js';
+import { outputStyle as style } from './terminal-style.js';
 
 type OllamaTagsResponse = {
   models?: Array<{ name?: unknown; model?: unknown }>;
@@ -23,13 +24,15 @@ export async function runSetup(existing: UserConfig = {}): Promise<UserConfig> {
   }
 
   const prompt = createInterface({ input: stdin, output: stdout });
-  stdout.write('\nCodivew 초기 설정\n\n');
+  stdout.write(`\n${style.bold(style.cyan('Codivew 초기 설정'))}\n\n`);
 
   try {
     const { url, models } = await askForOllama(prompt, existing.ollamaUrl ?? DEFAULT_OLLAMA_URL);
     const model = await askForModel(prompt, models, existing.model ?? DEFAULT_OLLAMA_MODEL);
     const saved = await saveUserConfig({ ollamaUrl: url, model });
-    stdout.write(`\n✓ 설정을 저장했습니다.\n  ${getUserConfigPath()}\n\n`);
+    stdout.write(
+      `\n${style.green('✓')} ${style.bold('설정을 저장했습니다.')}\n${style.gray(`  ${getUserConfigPath()}`)}\n\n`,
+    );
     return saved;
   } finally {
     prompt.close();
@@ -76,21 +79,31 @@ async function askForOllama(
 ): Promise<{ url: string; models: string[] }> {
   let suggestedUrl = defaultUrl;
   while (true) {
-    const answer = (await prompt.question(`Ollama URL (${suggestedUrl}): `)).trim();
+    const answer = (
+      await prompt.question(
+        `${style.bold('Ollama URL')} ${style.dim(`(${suggestedUrl})`)}${style.cyan(':')} `,
+      )
+    ).trim();
     try {
       const url = parseOllamaUrl(answer || suggestedUrl);
-      stdout.write('  Ollama 연결 확인 중...\n');
+      stdout.write(`  ${style.cyan('●')} Ollama 연결 확인 중...\n`);
       const models = await listOllamaModels(url);
       if (models.length === 0) {
-        stdout.write('  설치된 모델이 없습니다. 먼저 ollama pull <model>을 실행하세요.\n\n');
+        stdout.write(
+          `  ${style.yellow('!')} 설치된 모델이 없습니다. 먼저 ${style.cyan('ollama pull <model>')}을 실행하세요.\n\n`,
+        );
         suggestedUrl = url;
         continue;
       }
-      stdout.write(`  ✓ 연결됨 · 모델 ${models.length}개\n\n`);
+      stdout.write(
+        `  ${style.green('✓')} 연결됨 ${style.gray('·')} 모델 ${style.bold(`${models.length}개`)}\n\n`,
+      );
       return { url, models };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      stdout.write(`  ✗ ${message}\n  URL을 다시 입력하세요.\n\n`);
+      stdout.write(
+        `  ${style.red('✗')} ${style.red(message)}\n  ${style.yellow('URL을 다시 입력하세요.')}\n\n`,
+      );
     }
   }
 }
@@ -100,13 +113,19 @@ async function askForModel(
   models: string[],
   preferredModel: string,
 ): Promise<string> {
-  stdout.write('사용할 모델:\n');
-  models.forEach((model, index) => stdout.write(`  ${index + 1}. ${model}\n`));
+  stdout.write(`${style.bold('사용할 모델')}\n`);
+  models.forEach((model, index) =>
+    stdout.write(`  ${style.cyan(`${index + 1}.`)} ${style.magenta(model)}\n`),
+  );
   const preferredIndex = models.indexOf(preferredModel);
   const defaultSelection = preferredIndex === -1 ? 1 : preferredIndex + 1;
 
   while (true) {
-    const answer = (await prompt.question(`선택 (${defaultSelection}): `)).trim();
+    const answer = (
+      await prompt.question(
+        `${style.bold('선택')} ${style.dim(`(${defaultSelection})`)}${style.cyan(':')} `,
+      )
+    ).trim();
     if (answer.length === 0) return models[defaultSelection - 1];
     const numericSelection = Number(answer);
     if (
@@ -117,6 +136,6 @@ async function askForModel(
       return models[numericSelection - 1];
     }
     if (models.includes(answer)) return answer;
-    stdout.write('  번호 또는 모델명을 정확히 입력하세요.\n');
+    stdout.write(`  ${style.yellow('!')} 번호 또는 모델명을 정확히 입력하세요.\n`);
   }
 }

@@ -8,6 +8,7 @@ import { createGitReviewInput } from './cli/git.js';
 import { openReport, writeReport } from './cli/report.js';
 import { runSetup } from './cli/setup.js';
 import { scheduleUpdateNotification } from './cli/update-notification.js';
+import { errorStyle, outputStyle as style } from './cli/terminal-style.js';
 import { ERROR_CODES } from './common/constants/error-codes.js';
 import { ReviewError } from './common/errors/review-error.js';
 import { hasConfiguredRuntimeConfig, resolveRuntimeConfig } from './config/runtime-config.js';
@@ -85,13 +86,13 @@ async function main(): Promise<void> {
   process.stdout.write(
     [
       '',
-      '✓ 리뷰 생성 완료',
-      `  판정          ${verdictLabel(generated.verdict)}`,
-      `  검토 파일     ${generated.reviewedFileCount}개`,
-      `  리뷰 항목     ${generated.issueCount}개`,
-      `  처리 시간     ${(generated.elapsedMs / 1000).toFixed(1)}초`,
-      `  결과 파일     ${outputPath}`,
-      command.options.silent ? '' : '  브라우저에서 결과를 열었습니다.',
+      `${style.green('✓')} ${style.bold('리뷰 생성 완료')}`,
+      `${style.gray('  판정          ')}${verdictLabel(generated.verdict)}`,
+      `${style.gray('  검토 파일     ')}${style.cyan(`${generated.reviewedFileCount}개`)}`,
+      `${style.gray('  리뷰 항목     ')}${style.yellow(`${generated.issueCount}개`)}`,
+      `${style.gray('  처리 시간     ')}${style.blue(`${(generated.elapsedMs / 1000).toFixed(1)}초`)}`,
+      `${style.gray('  결과 파일     ')}${style.cyan(outputPath)}`,
+      command.options.silent ? '' : style.dim('  브라우저에서 결과를 열었습니다.'),
       '',
     ]
       .filter((line, index, lines) => line.length > 0 || index === 0 || index === lines.length - 1)
@@ -117,16 +118,18 @@ function printInput(request: ReviewRequest, baseUrl: string, model: string): voi
   process.stdout.write(
     [
       '',
-      'Codivew',
-      '────────────────────────────────────────',
-      `  Repository    ${request.repository}`,
-      `  Mode          ${request.mode}`,
-      ...(request.baseBranch === undefined ? [] : [`  Base branch   ${request.baseBranch}`]),
-      `  Changed files ${changedFiles}`,
-      `  Diff size     ${Buffer.byteLength(request.diff, 'utf8')} bytes`,
-      `  Ollama        ${baseUrl}`,
-      `  Model         ${model}`,
-      '────────────────────────────────────────',
+      style.bold(style.cyan('Codivew')),
+      style.gray('────────────────────────────────────────'),
+      `${style.gray('  Repository    ')}${style.bold(request.repository)}`,
+      `${style.gray('  Mode          ')}${style.yellow(request.mode)}`,
+      ...(request.baseBranch === undefined
+        ? []
+        : [`${style.gray('  Base branch   ')}${style.yellow(request.baseBranch)}`]),
+      `${style.gray('  Changed files ')}${style.cyan(`${changedFiles}`)}`,
+      `${style.gray('  Diff size     ')}${style.blue(`${Buffer.byteLength(request.diff, 'utf8')} bytes`)}`,
+      `${style.gray('  Ollama        ')}${style.blue(baseUrl)}`,
+      `${style.gray('  Model         ')}${style.magenta(model)}`,
+      style.gray('────────────────────────────────────────'),
       '',
     ].join('\n'),
   );
@@ -144,7 +147,7 @@ function startProgress(): () => void {
   const render = (): void => {
     const elapsed = Math.floor((Date.now() - startedAt) / 1000);
     process.stdout.write(
-      `\r\u001B[2K  ${frames[frame]} Codivew Engine 리뷰 생성 중... ${elapsed}s`,
+      `\r\u001B[2K  ${style.cyan(frames[frame])} ${style.bold('Codivew Engine')} 리뷰 생성 중... ${style.dim(`${elapsed}s`)}`,
     );
     frame = (frame + 1) % frames.length;
   };
@@ -157,27 +160,30 @@ function startProgress(): () => void {
 }
 
 function verdictLabel(verdict: string): string {
-  return (
-    { approve: '승인', comment: '확인 필요', request_changes: '수정 필요' }[verdict] ?? verdict
-  );
+  const labels: Record<string, string> = {
+    approve: style.green('승인'),
+    comment: style.yellow('확인 필요'),
+    request_changes: style.red('수정 필요'),
+  };
+  return labels[verdict] ?? verdict;
 }
 
 function usage(): string {
-  return `Usage: codivew [working|staged|branch] [options]
+  return `${style.bold('Usage:')} ${style.cyan('codivew')} ${style.yellow('[working|staged|branch]')} ${style.dim('[options]')}
 
 Codivew Engine으로 로컬 Git diff를 리뷰하고 독립 실행형 HTML 리포트를 생성합니다.
 
-Commands:
+${style.bold(style.cyan('Commands:'))}
   setup                 Ollama 연결과 모델을 대화형으로 설정
   config show           저장된 사용자 설정 표시
   config set <key> <v>  ollama-url 또는 model 설정
 
-Modes:
+${style.bold(style.cyan('Modes:'))}
   working               작업 트리 변경사항 리뷰 (기본값)
   staged                스테이징된 변경사항 리뷰
   branch                기준 브랜치와 HEAD 사이 변경사항 리뷰
 
-Options:
+${style.bold(style.cyan('Options:'))}
   -b, --base <branch>    branch 모드 기준 브랜치 (기본값: main)
   -c, --context <text>   프로젝트 설명 추가, 여러 번 사용 가능
   -o, --output <path>    HTML 결과 파일 경로
@@ -193,14 +199,16 @@ Options:
 
 void main().catch((error: unknown) => {
   if (error instanceof ReviewError) {
-    process.stderr.write(`✗ [${error.code}] ${error.message}\n`);
+    process.stderr.write(
+      `${errorStyle.red('✗')} ${errorStyle.yellow(`[${error.code}]`)} ${errorStyle.red(error.message)}\n`,
+    );
   } else if (error instanceof ZodError) {
     process.stderr.write(
-      `✗ 설정값이 올바르지 않습니다: ${error.issues[0]?.message ?? '검증 실패'}\n`,
+      `${errorStyle.red('✗ 설정값이 올바르지 않습니다:')} ${error.issues[0]?.message ?? '검증 실패'}\n`,
     );
   } else {
     const message = error instanceof Error ? error.message : String(error);
-    process.stderr.write(`✗ 예상하지 못한 오류가 발생했습니다: ${message}\n`);
+    process.stderr.write(`${errorStyle.red('✗ 예상하지 못한 오류가 발생했습니다:')} ${message}\n`);
   }
   process.exitCode = 1;
 });
