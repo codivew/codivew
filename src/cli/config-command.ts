@@ -8,16 +8,17 @@ import {
   saveUserConfig,
 } from '../config/user-config.js';
 import type { ConfigKey } from './arguments.js';
+import { outputStyle as style } from './terminal-style.js';
 
 export async function showConfig(): Promise<void> {
   const configPath = getUserConfigPath();
   const config = await loadUserConfig(configPath);
   stdout.write(
     [
-      'Codivew 설정',
-      `  파일        ${configPath}`,
-      `  Ollama URL  ${config?.ollamaUrl ?? '(미설정)'}`,
-      `  Model       ${config?.model ?? '(미설정)'}`,
+      style.bold(style.cyan('Codivew 설정')),
+      `${style.gray('  파일        ')}${configPath}`,
+      `${style.gray('  Ollama URL  ')}${style.blue(config?.ollamaUrl ?? '(미설정)')}`,
+      `${style.gray('  Model       ')}${style.magenta(config?.model ?? '(미설정)')}`,
       '',
     ].join('\n'),
   );
@@ -31,7 +32,9 @@ export async function setConfig(key: ConfigKey, value: string): Promise<void> {
       ? { ...current, ollamaUrl: parseOllamaUrl(value) }
       : { ...current, model: requireModel(value) };
   await saveUserConfig(next, configPath);
-  stdout.write(`✓ ${key} 설정을 저장했습니다.\n  ${configPath}\n`);
+  stdout.write(
+    `${style.green('✓')} ${style.bold(`${key} 설정을 저장했습니다.`)}\n${style.gray(`  ${configPath}`)}\n`,
+  );
 }
 
 function requireModel(value: string): string {
