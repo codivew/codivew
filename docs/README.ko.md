@@ -91,10 +91,10 @@ codivew --help
 .codivew/
 ```
 
-브라우저를 열지 않으려면 `--silent`, 저장 경로를 지정하려면 `--output`을 사용하세요.
+브라우저를 열지 않으려면 `--no-open`, 저장 경로를 지정하려면 `--output`을 사용하세요.
 
 ```bash
-codivew staged --silent
+codivew staged --no-open
 codivew staged --output ./reports/review.html
 ```
 

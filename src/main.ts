@@ -81,7 +81,7 @@ async function main(): Promise<void> {
   }
 
   const outputPath = await writeReport(generated.html, command.options.output);
-  if (!command.options.silent) await openReport(outputPath);
+  if (command.options.openReport) await openReport(outputPath);
 
   process.stdout.write(
     [
@@ -92,7 +92,7 @@ async function main(): Promise<void> {
       `${style.gray('  리뷰 항목     ')}${style.yellow(`${generated.issueCount}개`)}`,
       `${style.gray('  처리 시간     ')}${style.blue(`${(generated.elapsedMs / 1000).toFixed(1)}초`)}`,
       `${style.gray('  결과 파일     ')}${style.cyan(outputPath)}`,
-      command.options.silent ? '' : style.dim('  브라우저에서 결과를 열었습니다.'),
+      command.options.openReport ? style.dim('  브라우저에서 결과를 열었습니다.') : '',
       '',
     ]
       .filter((line, index, lines) => line.length > 0 || index === 0 || index === lines.length - 1)
@@ -187,7 +187,7 @@ ${style.bold(style.cyan('Options:'))}
   -b, --base <branch>    branch 모드 기준 브랜치 (기본값: main)
   -c, --context <text>   프로젝트 설명 추가, 여러 번 사용 가능
   -o, --output <path>    HTML 결과 파일 경로
-      --silent           브라우저를 열지 않기
+      --no-open          브라우저를 열지 않기
       --no-update-notifier 업데이트 알림을 이번 실행에서 끄기
       --ollama-url <url> 이번 실행에서 사용할 Ollama URL
       --model <name>     이번 실행에서 사용할 모델

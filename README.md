@@ -91,10 +91,10 @@ Reports are saved under `.codivew/` in the directory where the command was run a
 .codivew/
 ```
 
-Use `--silent` to prevent the browser from opening, or `--output` to choose the report path:
+Use `--no-open` to prevent the browser from opening, or `--output` to choose the report path:
 
 ```bash
-codivew staged --silent
+codivew staged --no-open
 codivew staged --output ./reports/review.html
 ```
 

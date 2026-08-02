@@ -8,7 +8,7 @@ export type CliOptions = {
   output?: string;
   ollamaUrl?: string;
   model?: string;
-  silent: boolean;
+  openReport: boolean;
   projectContext: string[];
 };
 
@@ -34,7 +34,7 @@ export function parseArguments(args: readonly string[]): CliCommand {
   const options: CliOptions = {
     mode: ReviewMode.WORKING,
     baseBranch: 'main',
-    silent: false,
+    openReport: true,
     projectContext: [],
   };
   let modeSet = false;
@@ -44,8 +44,8 @@ export function parseArguments(args: readonly string[]): CliCommand {
     if (argument === '--help' || argument === '-h') return { kind: 'help' };
     if (argument === '--version' || argument === '-v') return { kind: 'version' };
     if (argument === '--no-update-notifier') continue;
-    if (argument === '--silent') {
-      options.silent = true;
+    if (argument === '--no-open' || argument === '--silent') {
+      options.openReport = false;
       continue;
     }
     if (argument === '--base' || argument === '-b') {

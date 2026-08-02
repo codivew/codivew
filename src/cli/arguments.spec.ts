@@ -8,7 +8,7 @@ describe('parseArguments', () => {
       options: {
         mode: ReviewMode.WORKING,
         baseBranch: 'main',
-        silent: false,
+        openReport: true,
         projectContext: [],
       },
     });
@@ -26,7 +26,7 @@ describe('parseArguments', () => {
         'Redis 없음',
         '--output',
         'review.html',
-        '--silent',
+        '--no-open',
         '--ollama-url',
         'http://ollama.test:11434',
         '--model',
@@ -40,7 +40,7 @@ describe('parseArguments', () => {
         output: 'review.html',
         ollamaUrl: 'http://ollama.test:11434',
         model: 'qwen',
-        silent: true,
+        openReport: false,
         projectContext: ['NestJS', 'Redis 없음'],
       },
     });
@@ -65,5 +65,12 @@ describe('parseArguments', () => {
 
   it('accepts the update notification opt-out flag', () => {
     expect(parseArguments(['--no-update-notifier', '--version'])).toEqual({ kind: 'version' });
+  });
+
+  it('accepts --silent as a backwards-compatible alias for --no-open', () => {
+    expect(parseArguments(['--silent'])).toMatchObject({
+      kind: 'run',
+      options: { openReport: false },
+    });
   });
 });
