@@ -6,13 +6,14 @@
 [![npm downloads](https://img.shields.io/npm/dm/codivew.svg)](https://www.npmjs.com/package/codivew)
 [![license](https://img.shields.io/npm/l/codivew.svg)](https://github.com/knsan189/codivew/blob/main/LICENSE)
 
-Codivew는 Git 변경사항을 Ollama 코딩 모델로 검토하고 독립 실행형 HTML 리포트를 생성합니다. 별도 서버나 데이터베이스 없이 로컬에서 실행됩니다.
+Codivew는 Git 변경사항을 Ollama 코딩 모델로 검토하고 HTML 또는 기계 판독 가능한 JSON 리포트를 생성합니다. 별도 서버나 데이터베이스 없이 로컬에서 실행됩니다.
 
 ## 주요 기능
 
 - working tree, staged 변경사항 및 브랜치 간 diff 리뷰
 - 리뷰 요약과 파일 및 변경 라인별 피드백 제공
 - diff를 접고 펼칠 수 있는 독립 실행형 HTML 리포트
+- 구조화된 리뷰 결과를 JSON으로 내보내기
 - 민감 파일과 생성 파일 자동 제외
 
 ## 요구사항
@@ -85,18 +86,22 @@ codivew --help
 
 ## 결과 파일
 
-리포트는 명령을 실행한 디렉터리의 `.codivew/`에 저장되고 브라우저에서 자동으로 열립니다.
+리포트는 명령을 실행한 디렉터리의 `.codivew/`에 저장됩니다. HTML 리포트는 브라우저에서 자동으로 열립니다.
 
 ```gitignore
 .codivew/
 ```
 
-브라우저를 열지 않으려면 `--silent`, 저장 경로를 지정하려면 `--output`을 사용하세요.
+브라우저를 열지 않으려면 `--no-open`, 저장 경로를 지정하려면 `--output`을 사용하세요.
 
 ```bash
-codivew staged --silent
+codivew staged --no-open
 codivew staged --output ./reports/review.html
+codivew staged --format json
+codivew staged --format both --output ./reports/review
 ```
+
+`--format`은 `html`(기본값), `json`, `both`를 지원합니다. JSON만 생성할 때는 브라우저를 열지 않습니다. `both`를 사용하면 같은 기본 이름으로 `.html`과 `.json`을 생성하고 HTML 리포트만 브라우저에서 엽니다.
 
 ## 제외 파일
 

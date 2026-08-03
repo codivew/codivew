@@ -17,6 +17,22 @@ export type GeneratedReview = {
   reviewedFileCount: number;
   elapsedMs: number;
   html: string;
+  json: ReviewJsonReport;
+};
+
+export type ReviewJsonReport = {
+  schemaVersion: 1;
+  reviewId: string;
+  createdAt: string;
+  elapsedMs: number;
+  model: string;
+  request: Omit<ReviewRequest, 'diff'>;
+  files: {
+    reviewed: string[];
+    originalCount: number;
+    excludedCount: number;
+  };
+  result: ReviewResult;
 };
 
 export class ReviewsService {
@@ -42,15 +58,38 @@ export class ReviewsService {
 
     const result = await this.generateResult(request, filtered);
     const elapsedMs = Date.now() - startedAt;
-    const html = this.renderer.render({
+    const createdAt = new Date();
+    const context = {
       reviewId,
-      createdAt: new Date(),
+      createdAt,
       elapsedMs,
       model: this.ollama.model,
       request,
       filtered,
       result,
-    });
+    };
+    const html = this.renderer.render(context);
+    const jsonRequest: Omit<ReviewRequest, 'diff'> = {
+      repository: request.repository,
+      mode: request.mode,
+      ...(request.baseBranch === undefined ? {} : { baseBranch: request.baseBranch }),
+      ...(request.commitSha === undefined ? {} : { commitSha: request.commitSha }),
+      ...(request.projectContext === undefined ? {} : { projectContext: request.projectContext }),
+    };
+    const json: ReviewJsonReport = {
+      schemaVersion: 1,
+      reviewId,
+      createdAt: createdAt.toISOString(),
+      elapsedMs,
+      model: this.ollama.model,
+      request: jsonRequest,
+      files: {
+        reviewed: filtered.reviewedFiles,
+        originalCount: filtered.originalFileCount,
+        excludedCount: filtered.filteredFileCount,
+      },
+      result,
+    };
 
     return {
       reviewId,
@@ -59,6 +98,7 @@ export class ReviewsService {
       reviewedFileCount: filtered.reviewedFiles.length,
       elapsedMs,
       html,
+      json,
     };
   }
 

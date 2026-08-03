@@ -60,7 +60,8 @@ function options(mode: ReviewMode): CliOptions {
   return {
     mode,
     baseBranch: 'main',
-    silent: true,
+    format: 'html',
+    openReport: false,
     projectContext: [],
   };
 }
