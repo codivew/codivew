@@ -1,5 +1,6 @@
 import { ERROR_CODES } from '../common/constants/error-codes.js';
 import { ReviewError } from '../common/errors/review-error.js';
+import { t } from '../config/language.js';
 import { reviewResultJsonSchema } from './schemas/review-result.schema.js';
 import type { ReviewPrompts } from './review-prompt.service.js';
 
@@ -44,7 +45,7 @@ export class OllamaService {
       if (!response.ok) {
         throw new ReviewError(
           ERROR_CODES.OLLAMA_UNAVAILABLE,
-          `Ollama 요청에 실패했습니다. (HTTP ${response.status})`,
+          t('ollama.requestFailed', { status: response.status }),
         );
       }
 
@@ -65,8 +66,8 @@ export class OllamaService {
     } catch (error) {
       if (error instanceof ReviewError) throw error;
       const message = controller.signal.aborted
-        ? `Ollama 응답 시간이 ${this.options.timeoutMs}ms를 초과했습니다.`
-        : `Ollama에 연결할 수 없습니다: ${this.baseUrl}`;
+        ? t('ollama.timeout', { timeout: this.options.timeoutMs })
+        : t('ollama.connectFailed', { url: this.baseUrl });
       throw new ReviewError(ERROR_CODES.OLLAMA_UNAVAILABLE, message, error);
     } finally {
       clearTimeout(timeout);
@@ -74,9 +75,6 @@ export class OllamaService {
   }
 
   private invalidResponse(): ReviewError {
-    return new ReviewError(
-      ERROR_CODES.MODEL_RESPONSE_INVALID,
-      'Ollama가 올바른 JSON 리뷰 결과를 반환하지 않았습니다.',
-    );
+    return new ReviewError(ERROR_CODES.MODEL_RESPONSE_INVALID, t('ollama.invalidJson'));
   }
 }

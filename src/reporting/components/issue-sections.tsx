@@ -1,13 +1,16 @@
 import type { VNode } from 'preact';
+import { t } from '../../config/language.js';
 import type { ReviewIssue, ReviewSeverity } from '../../reviews/types/review-result.js';
 import type { ParsedDiffFile } from '../../reviews/unified-diff.js';
 import { Empty, SectionHeader, SURFACE_CLASSES } from './report-ui.js';
 
-export const severityLabels: Record<ReviewSeverity, string> = {
-  must_fix: '필수 수정',
-  should_fix: '수정 권장',
-  suggestion: '제안',
-};
+export function severityLabel(severity: ReviewSeverity): string {
+  return {
+    must_fix: t('report.severity.mustFix'),
+    should_fix: t('report.severity.shouldFix'),
+    suggestion: t('report.severity.suggestion'),
+  }[severity];
+}
 
 const ISSUE_BORDER_CLASSES: Record<ReviewSeverity, string> = {
   must_fix: 'border-t-[3px] border-t-[var(--must)]',
@@ -32,20 +35,35 @@ export function IssueSections({
       <section id="review-issues" class="scroll-mt-5">
         <SectionHeader
           eyebrow="Review findings"
-          title="리뷰 항목"
-          description="검토 범위에서 차단 또는 개선 항목이 확인되지 않았습니다."
+          title={t('report.reviewItems')}
+          description={t('report.noIssuesDescription')}
           count={0}
         />
-        <Empty>발견된 문제가 없습니다.</Empty>
+        <Empty>{t('report.noIssues')}</Empty>
       </section>
     );
   }
 
   return (
     <div id="review-issues" class="scroll-mt-5">
-      <IssueSection title="필수 수정" severity="must_fix" issues={issues} files={files} />
-      <IssueSection title="수정 권장" severity="should_fix" issues={issues} files={files} />
-      <IssueSection title="제안" severity="suggestion" issues={issues} files={files} />
+      <IssueSection
+        title={severityLabel('must_fix')}
+        severity="must_fix"
+        issues={issues}
+        files={files}
+      />
+      <IssueSection
+        title={severityLabel('should_fix')}
+        severity="should_fix"
+        issues={issues}
+        files={files}
+      />
+      <IssueSection
+        title={severityLabel('suggestion')}
+        severity="suggestion"
+        issues={issues}
+        files={files}
+      />
     </div>
   );
 }
@@ -77,10 +95,10 @@ function IssueSection({
         title={title}
         description={
           severity === 'must_fix'
-            ? '병합 전에 반드시 해결해야 하는 항목입니다.'
+            ? t('report.mustFixDescription')
             : severity === 'should_fix'
-              ? '안정성과 유지보수성을 위해 확인을 권장합니다.'
-              : '코드 품질을 더 높일 수 있는 개선 제안입니다.'
+              ? t('report.shouldFixDescription')
+              : t('report.suggestionDescription')
         }
         count={matches.length}
       />
@@ -109,7 +127,7 @@ function Issue({
     issue.endLine === undefined || issue.endLine === issue.line
       ? String(issue.line)
       : `${issue.line}-${issue.endLine}`;
-  const location = `${issue.file} · ${line}번째 줄`;
+  const location = t('report.location', { file: issue.file, line });
   const target = diffTarget(issue, files);
   const locationClasses =
     'inline-flex items-center rounded-lg bg-[var(--accent-soft)] px-2.5 py-1.5 font-mono text-[12px]/[1.4] font-semibold text-[var(--accent)] no-underline hover:underline';
@@ -123,7 +141,7 @@ function Issue({
         <div class="mb-3 flex items-center justify-between gap-3">
           <SeverityBadge severity={issue.severity} />
           <span class="text-xs font-semibold text-[var(--muted)]">
-            신뢰도 {Math.round(issue.confidence * 100)}%
+            {t('report.confidence')} {Math.round(issue.confidence * 100)}%
           </span>
         </div>
         <h3 class="mb-3 text-[19px]/6 font-bold tracking-[-0.02em]">{issue.title}</h3>
@@ -131,13 +149,13 @@ function Issue({
           <span class={locationClasses}>{location}</span>
         ) : (
           <a class={locationClasses} href={`#${target}`}>
-            {location} <span class="ml-1">코드 보기 →</span>
+            {location} <span class="ml-1">{t('report.viewCode')}</span>
           </a>
         )}
         <dl class="mt-4 overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--panel-subtle)]">
-          <IssueRow label="설명" value={issue.description} />
-          <OptionalIssueRow label="영향" value={issue.impact} />
-          <OptionalIssueRow label="수정 제안" value={issue.suggestion} />
+          <IssueRow label={t('report.description')} value={issue.description} />
+          <OptionalIssueRow label={t('report.impact')} value={issue.impact} />
+          <OptionalIssueRow label={t('report.suggestion')} value={issue.suggestion} />
         </dl>
         {issue.codeSnippet === undefined ? null : (
           <pre class="mt-4 overflow-x-auto rounded-xl border border-white/5 bg-[var(--code)] p-4 text-[13px]/[1.65] text-[var(--code-text)] shadow-inner">
@@ -155,7 +173,7 @@ function SeverityBadge({ severity }: { severity: ReviewSeverity }): VNode {
       class={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-xs font-bold ${SEVERITY_BADGE_CLASSES[severity]}`}
     >
       <span class="size-1.5 rounded-full bg-current" />
-      {severityLabels[severity]}
+      {severityLabel(severity)}
     </span>
   );
 }

@@ -1,4 +1,5 @@
 import type { VNode } from 'preact';
+import { getLanguage } from '../config/language.js';
 import type { ReviewRenderContext } from '../reviews/types/review-renderer.js';
 import { parseUnifiedDiff } from '../reviews/unified-diff.js';
 import { IssueSections } from './components/issue-sections.js';
@@ -17,7 +18,7 @@ export function ReviewReport({ context }: ReviewReportProps): VNode {
   const title = `Codivew - ${context.request.repository} - ${context.reviewId}`;
 
   return (
-    <html lang="ko">
+    <html lang={getLanguage()}>
       <head>
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />

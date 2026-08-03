@@ -35,7 +35,14 @@ npm install -g codivew
 codivew setup
 ```
 
-`setup`은 Ollama에 연결하고 선택한 URL과 모델을 저장합니다. 저장된 설정이 없다면 첫 대화형 리뷰 전에 자동으로 실행됩니다.
+`setup`에서 `ko-KR` 또는 `en`을 선택한 뒤 Ollama에 연결하고 언어, URL, 모델을 저장합니다. 기본 언어는 한국어입니다. 영어를 선택하면 CLI 메시지, 생성되는 리뷰 피드백, HTML 리포트 문구가 영어로 표시됩니다. 저장된 설정이 없다면 첫 대화형 리뷰 전에 자동으로 실행됩니다.
+
+setup을 다시 실행하지 않고 저장된 언어만 변경할 수도 있습니다.
+
+```bash
+codivew config set language en
+codivew config set language ko-KR
+```
 
 Codivew 업데이트:
 

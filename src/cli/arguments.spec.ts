@@ -1,4 +1,5 @@
 import { ReviewMode } from '../reviews/types/review-request.js';
+import { setLanguage } from '../config/language.js';
 import { parseArguments } from './arguments.js';
 
 describe('parseArguments', () => {
@@ -58,6 +59,7 @@ describe('parseArguments', () => {
       { kind: 'config-set', key: 'ollama-url', value: 'http://localhost:11434' },
     ],
     [['config', 'set', 'model', 'qwen'], { kind: 'config-set', key: 'model', value: 'qwen' }],
+    [['config', 'set', 'language', 'en'], { kind: 'config-set', key: 'language', value: 'en' }],
   ])('parses configuration command %j', (args, expected) => {
     expect(parseArguments(args)).toEqual(expected);
   });
@@ -80,5 +82,14 @@ describe('parseArguments', () => {
 
   it('rejects an unsupported output format', () => {
     expect(() => parseArguments(['--format', 'xml'])).toThrow('지원하지 않는 출력 형식입니다');
+  });
+
+  it('reports argument errors in English when English is selected', () => {
+    setLanguage('en');
+    try {
+      expect(() => parseArguments(['--unknown'])).toThrow('Unknown argument');
+    } finally {
+      setLanguage('ko-KR');
+    }
   });
 });

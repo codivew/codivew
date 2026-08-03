@@ -43,6 +43,7 @@ describe('ReviewsService', () => {
     expect(result.json).toMatchObject({
       schemaVersion: 1,
       model: 'qwen',
+      language: 'ko-KR',
       request: { repository: 'repo', mode: ReviewMode.STAGED },
       files: { reviewed: ['src/app.ts'], originalCount: 1, excludedCount: 0 },
       result: valid,
