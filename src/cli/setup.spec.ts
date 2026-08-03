@@ -1,5 +1,5 @@
 import { jest } from '@jest/globals';
-import { listOllamaModels } from './setup.js';
+import { listOllamaModels, parseLanguageSelection } from './setup.js';
 
 describe('listOllamaModels', () => {
   const originalFetch = global.fetch;
@@ -27,5 +27,22 @@ describe('listOllamaModels', () => {
     await expect(listOllamaModels('http://ollama.test')).rejects.toMatchObject({
       code: 'OLLAMA_UNAVAILABLE',
     });
+  });
+});
+
+describe('parseLanguageSelection', () => {
+  it.each([
+    ['', 'ko-KR', 'ko-KR'],
+    ['', 'en', 'en'],
+    ['1', 'en', 'ko-KR'],
+    ['2', 'ko-KR', 'en'],
+    ['ko-KR', 'en', 'ko-KR'],
+    ['en', 'ko-KR', 'en'],
+  ] as const)('maps %j with default %s to %s', (answer, defaultLanguage, expected) => {
+    expect(parseLanguageSelection(answer, defaultLanguage)).toBe(expected);
+  });
+
+  it('rejects unsupported languages', () => {
+    expect(parseLanguageSelection('ja', 'ko-KR')).toBeUndefined();
   });
 });

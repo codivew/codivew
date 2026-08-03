@@ -35,7 +35,14 @@ npm install -g codivew
 codivew setup
 ```
 
-`setup` connects to Ollama and saves the URL and model you select. If no configuration exists, Codivew starts setup automatically before the first interactive review.
+`setup` lets you choose `ko-KR` or `en`, then connects to Ollama and saves the language, URL, and model. Korean is the default. Selecting English switches CLI messages, generated review feedback, and HTML report labels to English. If no configuration exists, Codivew starts setup automatically before the first interactive review.
+
+Change the saved language without running setup again:
+
+```bash
+codivew config set language en
+codivew config set language ko-KR
+```
 
 To update Codivew:
 
@@ -82,6 +89,15 @@ View all commands and options with:
 
 ```bash
 codivew --help
+```
+
+## VS Code Extension
+
+The VS Code and Cursor extension lives in the separate
+[codivew-vscode](https://github.com/knsan189/codivew-vscode) repository. It imports the reusable review API exposed by this package through `codivew/core`.
+
+```ts
+import { runReview, ReviewMode } from 'codivew/core';
 ```
 
 ## Output

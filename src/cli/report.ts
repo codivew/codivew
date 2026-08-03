@@ -2,9 +2,8 @@ import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, extname, join, resolve } from 'node:path';
-import { ERROR_CODES } from '../common/constants/error-codes.js';
-import { ReviewError } from '../common/errors/review-error.js';
-import type { ReviewJsonReport } from '../reviews/reviews.service.js';
+import { ERROR_CODES, ReviewError, type ReviewJsonReport } from '../core/index.js';
+import { t } from '../config/language.js';
 import type { OutputFormat } from './arguments.js';
 
 export type ReportPaths = {
@@ -44,7 +43,7 @@ export async function writeReports(
   } catch (error) {
     throw new ReviewError(
       ERROR_CODES.OUTPUT_FAILED,
-      `리포트를 저장할 수 없습니다: ${requestedBase ?? defaultBase}`,
+      t('report.saveFailed', { path: requestedBase ?? defaultBase }),
       error,
     );
   }
@@ -65,7 +64,7 @@ export async function openReport(outputPath: string): Promise<void> {
       resolve();
     });
     child.once('error', (error) => {
-      reject(new ReviewError(ERROR_CODES.OUTPUT_FAILED, '브라우저를 실행할 수 없습니다.', error));
+      reject(new ReviewError(ERROR_CODES.OUTPUT_FAILED, t('report.browserFailed'), error));
     });
   });
 }

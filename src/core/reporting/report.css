@@ -1,0 +1,118 @@
+@import 'tailwindcss' source(none);
+@source './**/*.tsx';
+
+@theme {
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+:root {
+  color-scheme: light dark;
+  --bg: #f6f7f9;
+  --panel: #ffffff;
+  --panel-subtle: #f9fafb;
+  --text: #101828;
+  --muted: #667085;
+  --muted-strong: #475467;
+  --line: #e4e7ec;
+  --line-strong: #d0d5dd;
+  --accent: #4f46e5;
+  --accent-soft: #eef2ff;
+  --must: #d92d20;
+  --must-soft: #fef3f2;
+  --should: #dc6803;
+  --should-soft: #fffaeb;
+  --suggest: #1570ef;
+  --suggest-soft: #eff8ff;
+  --success: #039855;
+  --success-soft: #ecfdf3;
+  --code: #111827;
+  --code-text: #f8fafc;
+  --add-bg: #ecfdf3;
+  --add-line: #d1fadf;
+  --del-bg: #fef3f2;
+  --del-line: #fee4e2;
+  --hunk-bg: #f1f5ff;
+  --shadow: 0 1px 2px rgb(16 24 40 / 4%), 0 1px 3px rgb(16 24 40 / 8%);
+  --shadow-lg: 0 12px 32px rgb(16 24 40 / 8%);
+}
+
+html body {
+  margin: 0;
+  background-color: var(--bg) !important;
+  color: var(--text) !important;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0c111d;
+    --panel: #161b26;
+    --panel-subtle: #1d2432;
+    --text: #f2f4f7;
+    --muted: #98a2b3;
+    --muted-strong: #d0d5dd;
+    --line: #293242;
+    --line-strong: #344054;
+    --accent: #a4bcfd;
+    --accent-soft: #202a4c;
+    --must: #f97066;
+    --must-soft: #3a2023;
+    --should: #fdb022;
+    --should-soft: #382b16;
+    --suggest: #84adff;
+    --suggest-soft: #172b4d;
+    --success: #32d583;
+    --success-soft: #173a2a;
+    --code: #090d14;
+    --code-text: #f8fafc;
+    --add-bg: #122c21;
+    --add-line: #1d4934;
+    --del-bg: #351b20;
+    --del-line: #57252c;
+    --hunk-bg: #202945;
+    --shadow: 0 1px 2px rgb(0 0 0 / 20%), 0 1px 3px rgb(0 0 0 / 28%);
+    --shadow-lg: 0 16px 40px rgb(0 0 0 / 28%);
+  }
+}
+
+body.vscode-dark,
+body.vscode-high-contrast {
+  --bg: #0c111d;
+  --panel: #161b26;
+  --panel-subtle: #1d2432;
+  --text: #f2f4f7;
+  --muted: #98a2b3;
+  --muted-strong: #d0d5dd;
+  --line: #293242;
+  --line-strong: #344054;
+  --accent: #a4bcfd;
+  --accent-soft: #202a4c;
+  --must: #f97066;
+  --must-soft: #3a2023;
+  --should: #fdb022;
+  --should-soft: #382b16;
+  --suggest: #84adff;
+  --suggest-soft: #172b4d;
+  --success: #32d583;
+  --success-soft: #173a2a;
+  --code: #090d14;
+  --code-text: #f8fafc;
+  --add-bg: #122c21;
+  --add-line: #1d4934;
+  --del-bg: #351b20;
+  --del-line: #57252c;
+  --hunk-bg: #202945;
+  --shadow: 0 1px 2px rgb(0 0 0 / 20%), 0 1px 3px rgb(0 0 0 / 28%);
+  --shadow-lg: 0 16px 40px rgb(0 0 0 / 28%);
+}
+
+@media print {
+  details > :not(summary) {
+    display: block !important;
+  }
+}

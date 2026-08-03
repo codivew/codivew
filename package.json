@@ -1,6 +1,6 @@
 {
   "name": "codivew",
-  "version": "0.1.6",
+  "version": "0.3.0",
   "private": false,
   "type": "module",
   "description": "Codivew CLI for local AI code reviews powered by Ollama",
@@ -24,6 +24,12 @@
   "bin": {
     "codivew": "dist/main.js"
   },
+  "exports": {
+    "./core": {
+      "types": "./dist/core/index.d.ts",
+      "import": "./dist/core/index.js"
+    }
+  },
   "files": [
     "dist",
     "docs"
@@ -34,7 +40,7 @@
   "scripts": {
     "dev": "node --loader ts-node/esm src/main.ts",
     "clean": "node scripts/clean-dist.mjs",
-    "generate:report-style": "tailwindcss -i ./src/reporting/report.css -o ./.report-style.tmp.css --minify && node scripts/generate-report-style.mjs",
+    "generate:report-style": "tailwindcss -i ./src/core/reporting/report.css -o ./.report-style.tmp.css --minify && node scripts/generate-report-style.mjs",
     "predev": "npm run generate:report-style",
     "prebuild": "npm run clean && npm run generate:report-style",
     "build": "tsc -p tsconfig.build.json",

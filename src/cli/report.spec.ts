@@ -2,8 +2,7 @@ import { jest } from '@jest/globals';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import type { ReviewJsonReport } from '../reviews/reviews.service.js';
-import { ReviewMode } from '../reviews/types/review-request.js';
+import { ReviewMode, type ReviewJsonReport } from '../core/index.js';
 import { writeReports } from './report.js';
 
 const json: ReviewJsonReport = {
@@ -12,6 +11,7 @@ const json: ReviewJsonReport = {
   createdAt: '2026-07-28T05:05:09.000Z',
   elapsedMs: 100,
   model: 'qwen',
+  language: 'ko-KR',
   request: { repository: 'repo', mode: ReviewMode.STAGED },
   files: { reviewed: ['src/app.ts'], originalCount: 1, excludedCount: 0 },
   result: { verdict: 'approve', risk: 'low', summary: '좋습니다.', issues: [], tests: [] },
