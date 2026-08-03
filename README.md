@@ -86,23 +86,12 @@ codivew --help
 
 ## VS Code Extension
 
-The repository also includes a VS Code extension that uses the same internal review core as the CLI. Build an installable VSIX locally with:
+The VS Code and Cursor extension lives in the separate
+[codivew-vscode](https://github.com/knsan189/codivew-vscode) repository. It imports the reusable review API exposed by this package through `codivew/core`.
 
-```bash
-npm install
-npm run package:extension
+```ts
+import { runReview, ReviewMode } from 'codivew/core';
 ```
-
-After installation, open Codivew from the Activity Bar. Enter a valid Ollama URL, select one of the models loaded from its `/api/tags` endpoint, and choose working tree, staged, or branch changes. Codivew previews the changed file and line counts for the selected range before the review starts. Findings appear in the Problems panel; open the full report from the result card when needed. The equivalent `Codivew: Review ...` commands remain available in the Command Palette.
-
-Run the Extension Host integration tests against VS Code or an installed Cursor app with:
-
-```bash
-npm run test:extension
-npm run test:extension:cursor
-```
-
-Set `CURSOR_EXECUTABLE_PATH` when Cursor is installed somewhere other than the default macOS location.
 
 ## Output
 

@@ -1,6 +1,6 @@
 {
   "name": "codivew",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": false,
   "type": "module",
   "description": "Codivew CLI for local AI code reviews powered by Ollama",
@@ -24,9 +24,12 @@
   "bin": {
     "codivew": "dist/main.js"
   },
-  "workspaces": [
-    "vscode-extension"
-  ],
+  "exports": {
+    "./core": {
+      "types": "./dist/core/index.d.ts",
+      "import": "./dist/core/index.js"
+    }
+  },
   "files": [
     "dist",
     "docs"
@@ -41,22 +44,15 @@
     "predev": "npm run generate:report-style",
     "prebuild": "npm run clean && npm run generate:report-style",
     "build": "tsc -p tsconfig.build.json",
-    "build:extension": "npm run generate:report-style && npm run build --workspace=codivew-vscode",
-    "build:all": "npm run build && npm run build:extension",
     "check": "npm run typecheck && npm run lint && npm test",
-    "check:extension": "npm run typecheck --workspace=codivew-vscode",
-    "check:all": "npm run check && npm run check:extension",
-    "test:extension": "npm run test:extension --workspace=codivew-vscode",
-    "test:extension:cursor": "npm run test:cursor --workspace=codivew-vscode",
     "pretypecheck": "npm run generate:report-style",
     "typecheck": "tsc --noEmit --incremental false",
-    "lint": "eslint \"src/**/*.{ts,tsx}\" \"vscode-extension/src/**/*.{ts,tsx}\"",
-    "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"vscode-extension/**/*.{ts,tsx,css,json,md,mjs,cjs}\" \"*.{json,md,mjs}\" \"scripts/**/*.mjs\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"vscode-extension/**/*.{ts,tsx,css,json,md,mjs,cjs}\" \"*.{json,md,mjs}\" \"scripts/**/*.mjs\"",
+    "lint": "eslint \"src/**/*.{ts,tsx}\"",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"*.{json,md,mjs}\" \"scripts/**/*.mjs\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"*.{json,md,mjs}\" \"scripts/**/*.mjs\"",
     "pretest": "npm run generate:report-style",
     "test": "jest --config jest.config.mjs",
-    "prepack": "npm run check && npm run build",
-    "package:extension": "npm run package --workspace=codivew-vscode"
+    "prepack": "npm run check && npm run build"
   },
   "dependencies": {
     "preact": "^10.29.7",

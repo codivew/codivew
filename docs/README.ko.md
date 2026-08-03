@@ -86,23 +86,11 @@ codivew --help
 
 ## VS Code 확장
 
-이 저장소에는 CLI와 동일한 내부 리뷰 코어를 사용하는 VS Code 확장이 포함되어 있습니다. 로컬에서 설치 가능한 VSIX를 생성하려면 다음 명령어를 실행하세요.
+VS Code 및 Cursor 확장은 별도의 [codivew-vscode](https://github.com/knsan189/codivew-vscode) 저장소에서 관리합니다. 확장은 이 패키지가 `codivew/core`로 공개하는 리뷰 API를 가져와 사용합니다.
 
-```bash
-npm install
-npm run package:extension
+```ts
+import { runReview, ReviewMode } from 'codivew/core';
 ```
-
-설치 후 Activity Bar에서 Codivew를 엽니다. 올바른 Ollama URL을 입력하면 `/api/tags`에서 설치된 모델을 자동으로 불러옵니다. 모델과 working tree, staged, branch 중 리뷰 범위를 선택하면 리뷰 전에 해당 범위의 변경 파일 및 줄 수를 확인할 수 있습니다. 리뷰 항목은 문제 패널에 표시되며, 필요한 경우 결과 카드에서 전체 리포트를 엽니다. 기존 `Codivew: Review ...` 명령도 명령 팔레트에서 계속 사용할 수 있습니다.
-
-VS Code 또는 설치된 Cursor에서 Extension Host 통합 테스트를 실행할 수 있습니다.
-
-```bash
-npm run test:extension
-npm run test:extension:cursor
-```
-
-Cursor가 macOS 기본 위치가 아닌 곳에 설치되어 있다면 `CURSOR_EXECUTABLE_PATH`를 지정하세요.
 
 ## 결과 파일
 
