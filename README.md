@@ -6,13 +6,14 @@ English | [한국어](./docs/README.ko.md)
 [![npm downloads](https://img.shields.io/npm/dm/codivew.svg)](https://www.npmjs.com/package/codivew)
 [![license](https://img.shields.io/npm/l/codivew.svg)](https://github.com/knsan189/codivew/blob/main/LICENSE)
 
-Codivew reviews Git changes with an Ollama coding model and generates a standalone HTML report. It runs locally without a separate server or database.
+Codivew reviews Git changes with an Ollama coding model and generates standalone HTML or machine-readable JSON reports. It runs locally without a separate server or database.
 
 ## Features
 
 - Review working tree, staged, or branch changes
 - Get a summary and feedback by file and changed line
 - Browse diffs in a collapsible, standalone HTML report
+- Export structured review results as JSON
 - Automatically exclude sensitive and generated files
 
 ## Requirements
@@ -34,7 +35,14 @@ npm install -g codivew
 codivew setup
 ```
 
-`setup` connects to Ollama and saves the URL and model you select. If no configuration exists, Codivew starts setup automatically before the first interactive review.
+`setup` lets you choose `ko-KR` or `en`, then connects to Ollama and saves the language, URL, and model. Korean is the default. Selecting English switches CLI messages, generated review feedback, and HTML report labels to English. If no configuration exists, Codivew starts setup automatically before the first interactive review.
+
+Change the saved language without running setup again:
+
+```bash
+codivew config set language en
+codivew config set language ko-KR
+```
 
 To update Codivew:
 
@@ -85,18 +93,22 @@ codivew --help
 
 ## Output
 
-Reports are saved under `.codivew/` in the directory where the command was run and open automatically in your browser.
+Reports are saved under `.codivew/` in the directory where the command was run. HTML reports open automatically in your browser.
 
 ```gitignore
 .codivew/
 ```
 
-Use `--silent` to prevent the browser from opening, or `--output` to choose the report path:
+Use `--no-open` to prevent the browser from opening, or `--output` to choose the report path:
 
 ```bash
-codivew staged --silent
+codivew staged --no-open
 codivew staged --output ./reports/review.html
+codivew staged --format json
+codivew staged --format both --output ./reports/review
 ```
+
+`--format` accepts `html` (default), `json`, or `both`. JSON-only output never opens a browser. With `both`, Codivew writes `.html` and `.json` files using the same base name and opens only the HTML report.
 
 ## Excluded Files
 

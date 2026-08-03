@@ -1,18 +1,22 @@
 import { ERROR_CODES } from '../common/constants/error-codes.js';
 import { ReviewError } from '../common/errors/review-error.js';
+import { t } from '../config/language.js';
 import { ReviewMode } from '../reviews/types/review-request.js';
 
 export type CliOptions = {
   mode: ReviewMode;
   baseBranch: string;
   output?: string;
+  format: OutputFormat;
   ollamaUrl?: string;
   model?: string;
-  silent: boolean;
+  openReport: boolean;
   projectContext: string[];
 };
 
-export type ConfigKey = 'ollama-url' | 'model';
+export type OutputFormat = 'html' | 'json' | 'both';
+
+export type ConfigKey = 'ollama-url' | 'model' | 'language';
 
 export type CliCommand =
   | { kind: 'help' }
@@ -23,6 +27,7 @@ export type CliCommand =
   | { kind: 'run'; options: CliOptions };
 
 const MODES = new Set<string>(Object.values(ReviewMode));
+const OUTPUT_FORMATS = new Set<OutputFormat>(['html', 'json', 'both']);
 
 export function parseArguments(args: readonly string[]): CliCommand {
   if (args[0] === 'setup') {
@@ -34,7 +39,8 @@ export function parseArguments(args: readonly string[]): CliCommand {
   const options: CliOptions = {
     mode: ReviewMode.WORKING,
     baseBranch: 'main',
-    silent: false,
+    format: 'html',
+    openReport: true,
     projectContext: [],
   };
   let modeSet = false;
@@ -44,8 +50,8 @@ export function parseArguments(args: readonly string[]): CliCommand {
     if (argument === '--help' || argument === '-h') return { kind: 'help' };
     if (argument === '--version' || argument === '-v') return { kind: 'version' };
     if (argument === '--no-update-notifier') continue;
-    if (argument === '--silent') {
-      options.silent = true;
+    if (argument === '--no-open' || argument === '--silent') {
+      options.openReport = false;
       continue;
     }
     if (argument === '--base' || argument === '-b') {
@@ -54,6 +60,17 @@ export function parseArguments(args: readonly string[]): CliCommand {
     }
     if (argument === '--output' || argument === '-o') {
       options.output = requiredValue(args, ++index, argument);
+      continue;
+    }
+    if (argument === '--format') {
+      const format = requiredValue(args, ++index, argument);
+      if (!OUTPUT_FORMATS.has(format as OutputFormat)) {
+        throw new ReviewError(
+          ERROR_CODES.INVALID_ARGUMENT,
+          t('argument.unsupportedOutputFormat', { format }),
+        );
+      }
+      options.format = format as OutputFormat;
       continue;
     }
     if (argument === '--ollama-url') {
@@ -73,14 +90,11 @@ export function parseArguments(args: readonly string[]): CliCommand {
       modeSet = true;
       continue;
     }
-    throw new ReviewError(ERROR_CODES.INVALID_ARGUMENT, `알 수 없는 인자입니다: ${argument}`);
+    throw new ReviewError(ERROR_CODES.INVALID_ARGUMENT, t('argument.unknown', { argument }));
   }
 
   if (options.projectContext.length > 20) {
-    throw new ReviewError(
-      ERROR_CODES.INVALID_ARGUMENT,
-      '--context는 최대 20개까지 지정할 수 있습니다.',
-    );
+    throw new ReviewError(ERROR_CODES.INVALID_ARGUMENT, t('argument.contextLimit'));
   }
 
   return { kind: 'run', options };
@@ -92,16 +106,19 @@ function parseConfigCommand(args: readonly string[]): CliCommand {
     return { kind: 'config-show' };
   }
   if (args[1] === 'set') {
-    assertArgumentCount(args, 4, 'Usage: codivew config set <ollama-url|model> <value>');
+    assertArgumentCount(args, 4, 'Usage: codivew config set <ollama-url|model|language> <value>');
     const key = args[2];
-    if (key !== 'ollama-url' && key !== 'model') {
-      throw new ReviewError(ERROR_CODES.INVALID_ARGUMENT, `지원하지 않는 설정 항목입니다: ${key}`);
+    if (key !== 'ollama-url' && key !== 'model' && key !== 'language') {
+      throw new ReviewError(
+        ERROR_CODES.INVALID_ARGUMENT,
+        t('argument.unsupportedConfigKey', { key }),
+      );
     }
     return { kind: 'config-set', key, value: args[3] };
   }
   throw new ReviewError(
     ERROR_CODES.INVALID_ARGUMENT,
-    'Usage: codivew config <show|set> [ollama-url|model] [value]',
+    'Usage: codivew config <show|set> [ollama-url|model|language] [value]',
   );
 }
 
@@ -114,7 +131,7 @@ function assertArgumentCount(args: readonly string[], expected: number, usage: s
 function requiredValue(args: readonly string[], index: number, option: string): string {
   const value = args[index];
   if (value === undefined || value.startsWith('-')) {
-    throw new ReviewError(ERROR_CODES.INVALID_ARGUMENT, `${option} 옵션에 값이 필요합니다.`);
+    throw new ReviewError(ERROR_CODES.INVALID_ARGUMENT, t('argument.valueRequired', { option }));
   }
   return value;
 }

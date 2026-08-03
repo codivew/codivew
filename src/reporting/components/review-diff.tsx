@@ -1,7 +1,8 @@
 import type { VNode } from 'preact';
+import { t } from '../../config/language.js';
 import type { ReviewIssue } from '../../reviews/types/review-result.js';
 import type { ParsedDiffFile, ParsedDiffLine } from '../../reviews/unified-diff.js';
-import { lineTarget, samePath, severityLabels } from './issue-sections.js';
+import { lineTarget, samePath, severityLabel } from './issue-sections.js';
 import { Empty, SectionHeader, SURFACE_CLASSES } from './report-ui.js';
 
 const COLLAPSED_DIFF_LINE_THRESHOLD = 40;
@@ -27,8 +28,8 @@ export function ReviewDiff({
     <section id="changed-code" class="scroll-mt-5">
       <SectionHeader
         eyebrow="Source changes"
-        title="변경 코드"
-        description={`${files.length}개 파일의 변경사항과 인라인 피드백입니다.`}
+        title={t('report.changedCode')}
+        description={t('report.changedCodeDescription', { count: files.length })}
       />
       <Diff files={files} issues={issues} />
     </section>
@@ -36,7 +37,7 @@ export function ReviewDiff({
 }
 
 function Diff({ files, issues }: { files: ParsedDiffFile[]; issues: ReviewIssue[] }): VNode {
-  if (files.length === 0) return <Empty>표시할 Diff가 없습니다.</Empty>;
+  if (files.length === 0) return <Empty>{t('report.noDiff')}</Empty>;
 
   return (
     <>
@@ -86,17 +87,17 @@ function DiffFile({
         </code>
         <div class="flex items-center gap-2 max-[700px]:order-3 max-[700px]:w-full max-[700px]:pl-10">
           <span class="rounded-full bg-[var(--panel)] px-2.5 py-1 text-xs font-semibold text-[var(--muted-strong)] ring-1 ring-[var(--line)]">
-            변경 {changedLineCount}줄
+            {t('report.changedLines', { count: changedLineCount })}
           </span>
           <span class="rounded-full bg-[var(--accent-soft)] px-2.5 py-1 text-xs font-semibold text-[var(--accent)]">
-            피드백 {fileIssues.length}개
+            {t('report.feedbackCount', { count: fileIssues.length })}
           </span>
         </div>
         <span class="rounded-lg px-2 py-1 text-[12px] font-bold text-[var(--accent)] group-open:hidden">
-          펼치기 ↓
+          {t('report.expand')}
         </span>
         <span class="hidden rounded-lg px-2 py-1 text-[12px] font-bold text-[var(--accent)] group-open:inline">
-          접기 ↑
+          {t('report.collapse')}
         </span>
       </summary>
       {file.metadata.length === 0 ? null : (
@@ -140,7 +141,7 @@ function DiffFile({
         </div>
       ) : (
         <div class="rounded-xl border border-dashed border-[var(--line-strong)] bg-[var(--panel-subtle)] px-5 py-7 text-center text-[var(--muted)]">
-          텍스트로 표시할 변경 라인이 없습니다.
+          {t('report.noChangedLines')}
         </div>
       )}
     </details>
@@ -208,13 +209,13 @@ function DiffLine({
                     ↳
                   </span>
                   <span class="whitespace-nowrap text-xs font-bold text-[var(--accent)]">
-                    {severityLabels[issue.severity]}
+                    {severityLabel(issue.severity)}
                   </span>
                   <span class="flex-1 text-[13px] font-bold max-[700px]:basis-[calc(100%_-_110px)]">
                     {issue.title}
                   </span>
                   <span class="whitespace-nowrap text-xs font-semibold text-[var(--accent)] max-[700px]:ml-[30px]">
-                    상세 보기 ↑
+                    {t('report.viewDetails')}
                   </span>
                 </a>
               );

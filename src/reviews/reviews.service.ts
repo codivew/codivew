@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { ZodError } from 'zod';
 import { ERROR_CODES } from '../common/constants/error-codes.js';
 import { ReviewError } from '../common/errors/review-error.js';
+import { getLanguage, t, type Language } from '../config/language.js';
 import { DiffFilterService } from './diff-filter.service.js';
 import { OllamaService } from './ollama.service.js';
 import { ReviewPromptService } from './review-prompt.service.js';
@@ -17,6 +18,23 @@ export type GeneratedReview = {
   reviewedFileCount: number;
   elapsedMs: number;
   html: string;
+  json: ReviewJsonReport;
+};
+
+export type ReviewJsonReport = {
+  schemaVersion: 1;
+  reviewId: string;
+  createdAt: string;
+  elapsedMs: number;
+  model: string;
+  language: Language;
+  request: Omit<ReviewRequest, 'diff'>;
+  files: {
+    reviewed: string[];
+    originalCount: number;
+    excludedCount: number;
+  };
+  result: ReviewResult;
 };
 
 export class ReviewsService {
@@ -36,21 +54,45 @@ export class ReviewsService {
     if (filtered.filteredCharCount > this.maxDiffChars) {
       throw new ReviewError(
         ERROR_CODES.DIFF_TOO_LARGE,
-        `필터링된 Diff가 최대 크기 ${this.maxDiffChars}자를 초과했습니다.`,
+        t('review.diffTooLarge', { max: this.maxDiffChars }),
       );
     }
 
     const result = await this.generateResult(request, filtered);
     const elapsedMs = Date.now() - startedAt;
-    const html = this.renderer.render({
+    const createdAt = new Date();
+    const context = {
       reviewId,
-      createdAt: new Date(),
+      createdAt,
       elapsedMs,
       model: this.ollama.model,
       request,
       filtered,
       result,
-    });
+    };
+    const html = this.renderer.render(context);
+    const jsonRequest: Omit<ReviewRequest, 'diff'> = {
+      repository: request.repository,
+      mode: request.mode,
+      ...(request.baseBranch === undefined ? {} : { baseBranch: request.baseBranch }),
+      ...(request.commitSha === undefined ? {} : { commitSha: request.commitSha }),
+      ...(request.projectContext === undefined ? {} : { projectContext: request.projectContext }),
+    };
+    const json: ReviewJsonReport = {
+      schemaVersion: 1,
+      reviewId,
+      createdAt: createdAt.toISOString(),
+      elapsedMs,
+      model: this.ollama.model,
+      language: getLanguage(),
+      request: jsonRequest,
+      files: {
+        reviewed: filtered.reviewedFiles,
+        originalCount: filtered.originalFileCount,
+        excludedCount: filtered.filteredFileCount,
+      },
+      result,
+    };
 
     return {
       reviewId,
@@ -59,6 +101,7 @@ export class ReviewsService {
       reviewedFileCount: filtered.reviewedFiles.length,
       elapsedMs,
       html,
+      json,
     };
   }
 
@@ -80,7 +123,7 @@ export class ReviewsService {
         if (!this.isModelInvalid(retryError)) throw retryError;
         throw new ReviewError(
           ERROR_CODES.MODEL_RESPONSE_INVALID,
-          '두 번의 시도에서 모두 모델 응답 검증에 실패했습니다.',
+          t('review.validationFailedTwice'),
           retryError,
         );
       }
@@ -101,6 +144,6 @@ export class ReviewsService {
         .map((issue) => `${issue.path.join('.') || 'root'}: ${issue.message}`)
         .join('; ');
     }
-    return '응답이 유효한 JSON이 아니거나 필수 필드가 없습니다.';
+    return t('review.invalidResponse');
   }
 }

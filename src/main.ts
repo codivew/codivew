@@ -2,14 +2,16 @@
 
 import { ZodError } from 'zod';
 import { createRequire } from 'node:module';
-import { parseArguments } from './cli/arguments.js';
+import { parseArguments, type CliOptions } from './cli/arguments.js';
 import { setConfig, showConfig } from './cli/config-command.js';
 import { createGitReviewInput } from './cli/git.js';
-import { openReport, writeReport } from './cli/report.js';
+import { openReport, writeReports } from './cli/report.js';
 import { runSetup } from './cli/setup.js';
 import { scheduleUpdateNotification } from './cli/update-notification.js';
+import { errorStyle, outputStyle as style } from './cli/terminal-style.js';
 import { ERROR_CODES } from './common/constants/error-codes.js';
 import { ReviewError } from './common/errors/review-error.js';
+import { setLanguage, t } from './config/language.js';
 import { hasConfiguredRuntimeConfig, resolveRuntimeConfig } from './config/runtime-config.js';
 import { loadUserConfig, type UserConfig } from './config/user-config.js';
 import { HtmlRendererService } from './reporting/html-renderer.service.js';
@@ -23,6 +25,8 @@ const loadModule = createRequire(import.meta.url);
 const { name, version } = loadModule('../package.json') as { name: string; version: string };
 
 async function main(): Promise<void> {
+  const savedConfig = await loadUserConfig();
+  setLanguage(savedConfig?.language ?? 'ko-KR');
   await scheduleUpdateNotification({ name, version });
   const command = parseArguments(process.argv.slice(2));
   if (command.kind === 'help') {
@@ -34,7 +38,7 @@ async function main(): Promise<void> {
     return;
   }
   if (command.kind === 'setup') {
-    await runSetup((await loadUserConfig()) ?? {});
+    await runSetup(savedConfig ?? {});
     return;
   }
   if (command.kind === 'config-show') {
@@ -46,7 +50,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  const userConfig = await ensureUserConfig(command.options);
+  const userConfig = await ensureUserConfig(command.options, savedConfig);
   const runtime = resolveRuntimeConfig(command.options, userConfig);
   const gitInput = await createGitReviewInput(process.cwd(), command.options);
   const request: ReviewRequest = {
@@ -59,7 +63,7 @@ async function main(): Promise<void> {
     diff: gitInput.diff,
   };
 
-  printInput(request, runtime.ollamaUrl, runtime.model);
+  printInput(request, runtime.ollamaUrl, runtime.model, command.options.format);
   const stopProgress = startProgress();
   let generated: Awaited<ReturnType<ReviewsService['createReview']>>;
   try {
@@ -79,19 +83,31 @@ async function main(): Promise<void> {
     stopProgress();
   }
 
-  const outputPath = await writeReport(generated.html, command.options.output);
-  if (!command.options.silent) await openReport(outputPath);
+  const outputPaths = await writeReports(generated, command.options.format, command.options.output);
+  const openedHtml = command.options.openReport ? outputPaths.html : undefined;
+  if (openedHtml !== undefined) await openReport(openedHtml);
 
   process.stdout.write(
     [
       '',
-      '✓ 리뷰 생성 완료',
-      `  판정          ${verdictLabel(generated.verdict)}`,
-      `  검토 파일     ${generated.reviewedFileCount}개`,
-      `  리뷰 항목     ${generated.issueCount}개`,
-      `  처리 시간     ${(generated.elapsedMs / 1000).toFixed(1)}초`,
-      `  결과 파일     ${outputPath}`,
-      command.options.silent ? '' : '  브라우저에서 결과를 열었습니다.',
+      `${style.green('✓')} ${style.bold(t('cli.reviewComplete'))}`,
+      `${style.gray(t('cli.verdictLabel'))}${verdictLabel(generated.verdict)}`,
+      `${style.gray(t('cli.filesLabel'))}${style.cyan(
+        t('cli.count', { count: generated.reviewedFileCount }),
+      )}`,
+      `${style.gray(t('cli.itemsLabel'))}${style.yellow(
+        t('cli.count', { count: generated.issueCount }),
+      )}`,
+      `${style.gray(t('cli.elapsedLabel'))}${style.blue(
+        t('common.seconds', { value: (generated.elapsedMs / 1000).toFixed(1) }),
+      )}`,
+      ...(outputPaths.html === undefined
+        ? []
+        : [`${style.gray('  HTML          ')}${style.cyan(outputPaths.html)}`]),
+      ...(outputPaths.json === undefined
+        ? []
+        : [`${style.gray('  JSON          ')}${style.cyan(outputPaths.json)}`]),
+      openedHtml === undefined ? '' : style.dim(t('cli.openedHtml')),
       '',
     ]
       .filter((line, index, lines) => line.length > 0 || index === 0 || index === lines.length - 1)
@@ -101,32 +117,37 @@ async function main(): Promise<void> {
 
 async function ensureUserConfig(
   options: Parameters<typeof hasConfiguredRuntimeConfig>[0],
+  config: UserConfig | undefined,
 ): Promise<UserConfig | undefined> {
-  const config = await loadUserConfig();
   if (config?.ollamaUrl !== undefined && config.model !== undefined) return config;
   if (hasConfiguredRuntimeConfig(options, config)) return config;
   if (process.stdin.isTTY && process.stdout.isTTY) return runSetup(config ?? {});
-  throw new ReviewError(
-    ERROR_CODES.CONFIG_REQUIRED,
-    'Codivew 설정이 필요합니다. codivew setup 또는 codivew config set 명령을 실행하세요.',
-  );
+  throw new ReviewError(ERROR_CODES.CONFIG_REQUIRED, t('cli.configRequired'));
 }
 
-function printInput(request: ReviewRequest, baseUrl: string, model: string): void {
+function printInput(
+  request: ReviewRequest,
+  baseUrl: string,
+  model: string,
+  format: CliOptions['format'],
+): void {
   const changedFiles = (request.diff.match(/^diff --git /gm) ?? []).length;
   process.stdout.write(
     [
       '',
-      'Codivew',
-      '────────────────────────────────────────',
-      `  Repository    ${request.repository}`,
-      `  Mode          ${request.mode}`,
-      ...(request.baseBranch === undefined ? [] : [`  Base branch   ${request.baseBranch}`]),
-      `  Changed files ${changedFiles}`,
-      `  Diff size     ${Buffer.byteLength(request.diff, 'utf8')} bytes`,
-      `  Ollama        ${baseUrl}`,
-      `  Model         ${model}`,
-      '────────────────────────────────────────',
+      style.bold(style.cyan('Codivew')),
+      style.gray('────────────────────────────────────────'),
+      `${style.gray('  Repository    ')}${style.bold(request.repository)}`,
+      `${style.gray('  Mode          ')}${style.yellow(request.mode)}`,
+      ...(request.baseBranch === undefined
+        ? []
+        : [`${style.gray('  Base branch   ')}${style.yellow(request.baseBranch)}`]),
+      `${style.gray('  Changed files ')}${style.cyan(`${changedFiles}`)}`,
+      `${style.gray('  Diff size     ')}${style.blue(`${Buffer.byteLength(request.diff, 'utf8')} bytes`)}`,
+      `${style.gray('  Ollama        ')}${style.blue(baseUrl)}`,
+      `${style.gray('  Model         ')}${style.magenta(model)}`,
+      `${style.gray('  Output        ')}${style.green(outputFormatLabel(format))}`,
+      style.gray('────────────────────────────────────────'),
       '',
     ].join('\n'),
   );
@@ -135,7 +156,7 @@ function printInput(request: ReviewRequest, baseUrl: string, model: string): voi
 function startProgress(): () => void {
   const startedAt = Date.now();
   if (!process.stdout.isTTY) {
-    process.stdout.write('Codivew Engine 리뷰 생성 중...\n');
+    process.stdout.write(`${t('cli.reviewing')}\n`);
     return () => undefined;
   }
 
@@ -144,7 +165,9 @@ function startProgress(): () => void {
   const render = (): void => {
     const elapsed = Math.floor((Date.now() - startedAt) / 1000);
     process.stdout.write(
-      `\r\u001B[2K  ${frames[frame]} Codivew Engine 리뷰 생성 중... ${elapsed}s`,
+      `\r\u001B[2K  ${style.cyan(frames[frame])} ${style.bold('Codivew Engine')} ${t(
+        'cli.reviewingShort',
+      )} ${style.dim(`${elapsed}s`)}`,
     );
     frame = (frame + 1) % frames.length;
   };
@@ -156,51 +179,45 @@ function startProgress(): () => void {
   };
 }
 
+function outputFormatLabel(format: CliOptions['format']): string {
+  return { html: 'HTML', json: 'JSON', both: 'HTML + JSON' }[format];
+}
+
 function verdictLabel(verdict: string): string {
-  return (
-    { approve: '승인', comment: '확인 필요', request_changes: '수정 필요' }[verdict] ?? verdict
-  );
+  const labels: Record<string, string> = {
+    approve: style.green(t('cli.verdict.approve')),
+    comment: style.yellow(t('cli.verdict.comment')),
+    request_changes: style.red(t('cli.verdict.requestChanges')),
+  };
+  return labels[verdict] ?? verdict;
 }
 
 function usage(): string {
-  return `Usage: codivew [working|staged|branch] [options]
-
-Codivew Engine으로 로컬 Git diff를 리뷰하고 독립 실행형 HTML 리포트를 생성합니다.
-
-Commands:
-  setup                 Ollama 연결과 모델을 대화형으로 설정
-  config show           저장된 사용자 설정 표시
-  config set <key> <v>  ollama-url 또는 model 설정
-
-Modes:
-  working               작업 트리 변경사항 리뷰 (기본값)
-  staged                스테이징된 변경사항 리뷰
-  branch                기준 브랜치와 HEAD 사이 변경사항 리뷰
-
-Options:
-  -b, --base <branch>    branch 모드 기준 브랜치 (기본값: main)
-  -c, --context <text>   프로젝트 설명 추가, 여러 번 사용 가능
-  -o, --output <path>    HTML 결과 파일 경로
-      --silent           브라우저를 열지 않기
-      --no-update-notifier 업데이트 알림을 이번 실행에서 끄기
-      --ollama-url <url> 이번 실행에서 사용할 Ollama URL
-      --model <name>     이번 실행에서 사용할 모델
-  -h, --help             도움말 표시
-  -v, --version          버전 표시
-
-`;
+  return t('cli.help', {
+    usageLabel: style.bold('Usage:'),
+    command: style.cyan('codivew'),
+    modeSpec: style.yellow('[working|staged|branch]'),
+    optionSpec: style.dim('[options]'),
+    commandsHeading: style.bold(style.cyan('Commands:')),
+    modesHeading: style.bold(style.cyan('Modes:')),
+    optionsHeading: style.bold(style.cyan('Options:')),
+  });
 }
 
 void main().catch((error: unknown) => {
   if (error instanceof ReviewError) {
-    process.stderr.write(`✗ [${error.code}] ${error.message}\n`);
+    process.stderr.write(
+      `${errorStyle.red('✗')} ${errorStyle.yellow(`[${error.code}]`)} ${errorStyle.red(error.message)}\n`,
+    );
   } else if (error instanceof ZodError) {
     process.stderr.write(
-      `✗ 설정값이 올바르지 않습니다: ${error.issues[0]?.message ?? '검증 실패'}\n`,
+      `${errorStyle.red(t('cli.invalidConfig'))} ${
+        error.issues[0]?.message ?? t('cli.validationFailed')
+      }\n`,
     );
   } else {
     const message = error instanceof Error ? error.message : String(error);
-    process.stderr.write(`✗ 예상하지 못한 오류가 발생했습니다: ${message}\n`);
+    process.stderr.write(`${errorStyle.red(t('cli.unexpectedError'))} ${message}\n`);
   }
   process.exitCode = 1;
 });

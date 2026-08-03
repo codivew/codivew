@@ -1,4 +1,5 @@
 import type { ComponentChildren, VNode } from 'preact';
+import { t } from '../../config/language.js';
 import type { ReviewRenderContext } from '../../reviews/types/review-renderer.js';
 import type { ReviewResult } from '../../reviews/types/review-result.js';
 import { formatDateTime } from './report-ui.js';
@@ -16,11 +17,21 @@ const RISK_BADGE_CLASSES: Record<ReviewResult['risk'], string> = {
 
 export function ReportHeader({ context }: { context: ReviewRenderContext }): VNode {
   const { result, request, filtered } = context;
-  const verdict = { approve: '승인', comment: '확인 필요', request_changes: '수정 필요' }[
-    result.verdict
-  ];
-  const risk = { low: '낮음', medium: '보통', high: '높음' }[result.risk];
-  const mode = { working: '작업 트리', staged: '스테이징', branch: '브랜치 비교' }[request.mode];
+  const verdict = {
+    approve: t('report.verdict.approve'),
+    comment: t('report.verdict.comment'),
+    request_changes: t('report.verdict.requestChanges'),
+  }[result.verdict];
+  const risk = {
+    low: t('report.risk.low'),
+    medium: t('report.risk.medium'),
+    high: t('report.risk.high'),
+  }[result.risk];
+  const mode = {
+    working: t('report.mode.working'),
+    staged: t('report.mode.staged'),
+    branch: t('report.mode.branch'),
+  }[request.mode];
 
   return (
     <header class="mb-6 overflow-hidden rounded-[24px] border border-[var(--line)] bg-[linear-gradient(135deg,var(--panel),var(--accent-soft))] p-7 shadow-[var(--shadow-lg)] max-[700px]:rounded-2xl max-[700px]:p-5 print:shadow-none">
@@ -43,7 +54,7 @@ export function ReportHeader({ context }: { context: ReviewRenderContext }): VNo
           <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[13px] text-[var(--muted-strong)]">
             <span>{mode}</span>
             <span class="size-1 rounded-full bg-[var(--line-strong)]" />
-            <span>검토 파일 {filtered.reviewedFiles.length}개</span>
+            <span>{t('report.filesReviewed', { count: filtered.reviewedFiles.length })}</span>
             <span class="size-1 rounded-full bg-[var(--line-strong)]" />
             <span>{formatDateTime(context.createdAt)}</span>
           </div>
@@ -53,13 +64,15 @@ export function ReportHeader({ context }: { context: ReviewRenderContext }): VNo
             <span class="size-1.5 rounded-full bg-current" />
             {verdict}
           </StatusBadge>
-          <StatusBadge className={RISK_BADGE_CLASSES[result.risk]}>위험도 {risk}</StatusBadge>
+          <StatusBadge className={RISK_BADGE_CLASSES[result.risk]}>
+            {t('report.riskLabel')} {risk}
+          </StatusBadge>
         </div>
       </div>
       <nav class="mt-6 flex flex-wrap gap-2 border-t border-[var(--line)] pt-4 text-[13px] font-semibold">
-        <NavLink href="#review-issues">리뷰 항목</NavLink>
-        <NavLink href="#changed-code">변경 코드</NavLink>
-        <NavLink href="#recommended-tests">권장 테스트</NavLink>
+        <NavLink href="#review-issues">{t('report.reviewItems')}</NavLink>
+        <NavLink href="#changed-code">{t('report.changedCode')}</NavLink>
+        <NavLink href="#recommended-tests">{t('report.recommendedTests')}</NavLink>
       </nav>
     </header>
   );
