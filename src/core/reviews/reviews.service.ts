@@ -52,7 +52,7 @@ export class ReviewsService {
     if (filtered.filteredCharCount > this.maxDiffChars) {
       throw new ReviewError(
         ERROR_CODES.DIFF_TOO_LARGE,
-        `필터링된 Diff가 최대 크기 ${this.maxDiffChars}자를 초과했습니다.`,
+        `필터링된 Diff가 최대 크기 ${this.maxDiffChars}자를 초과했습니다. (현재 ${filtered.filteredCharCount}자)`,
       );
     }
 

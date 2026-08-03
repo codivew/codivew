@@ -37,7 +37,7 @@ export function ReportHeader({ context }: { context: ReviewRenderContext }): VNo
               <p class="text-xs text-[var(--muted)]">AI Code Review Report</p>
             </div>
           </div>
-          <h1 class="mb-3 max-w-[760px] text-[32px]/[1.16] font-bold tracking-[-0.035em] [overflow-wrap:anywhere] max-[700px]:text-[26px]/[1.2]">
+          <h1 class="mb-3 max-w-[760px] text-[32px]/[1.16] font-bold tracking-[-0.035em] text-[var(--text)] [overflow-wrap:anywhere] max-[700px]:text-[26px]/[1.2]">
             {request.repository}
           </h1>
           <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[13px] text-[var(--muted-strong)]">

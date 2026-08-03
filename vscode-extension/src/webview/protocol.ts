@@ -29,10 +29,13 @@ export type ExtensionMessage =
   | { type: 'openReport' };
 
 export type DiffStats = {
+  files: string[];
   fileCount: number;
   additions: number;
   deletions: number;
   changedLineCount: number;
+  filteredCharCount: number;
+  maxDiffChars: number;
 };
 
 export type ReviewResultSummary = {
@@ -70,4 +73,5 @@ export type WebviewInitialState = {
   ollamaUrl: string;
   model: string;
   baseBranch: string;
+  maxDiffChars: number;
 };

@@ -44,6 +44,9 @@ describe('HtmlRendererService', () => {
     expect(html).not.toMatch(/<script[\s>]/i);
     expect(html).not.toMatch(/(?:src|href)=["']https?:/i);
     expect(html).toContain('<style>/*! tailwindcss');
+    expect(html).toContain('html body{');
+    expect(html).toContain('color:var(--text)!important');
+    expect(html).toContain('body.vscode-dark');
   });
 
   it('renders empty states and omits absent optional fields', () => {

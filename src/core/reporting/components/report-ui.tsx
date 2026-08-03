@@ -7,7 +7,8 @@ export const PANEL_CLASSES = `${SURFACE_CLASSES} p-5 max-[700px]:p-4`;
 
 const PANEL_HEADING_CLASSES =
   'mb-3 text-[13px]/5 font-bold tracking-[0.08em] text-[var(--muted-strong)] uppercase';
-const SECTION_HEADING_CLASSES = 'text-xl leading-tight font-bold tracking-[-0.02em]';
+const SECTION_HEADING_CLASSES =
+  'text-xl leading-tight font-bold tracking-[-0.02em] text-[var(--text)]';
 const EMPTY_CLASSES =
   'rounded-xl border border-dashed border-[var(--line-strong)] bg-[var(--panel-subtle)] px-5 py-7 text-center text-[var(--muted)]';
 
@@ -85,7 +86,7 @@ export function MetadataRow({
     <>
       <dt class="font-medium text-[var(--muted)]">{label}</dt>
       <dd
-        class={`min-w-0 font-semibold [overflow-wrap:anywhere] ${mono ? 'font-mono text-[13px]' : ''}`}
+        class={`min-w-0 font-semibold text-[var(--text)] [overflow-wrap:anywhere] ${mono ? 'font-mono text-[13px]' : ''}`}
       >
         {value}
       </dd>

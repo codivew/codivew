@@ -28,12 +28,15 @@ type PersistedState = {
 type ModelsStatus = 'idle' | 'loading' | 'loaded' | 'error';
 type DiffStatsStatus = 'idle' | 'loading' | 'loaded' | 'error';
 
-const EMPTY_DIFF_STATS: DiffStats = {
+const emptyDiffStats = (maxDiffChars: number): DiffStats => ({
+  files: [],
   fileCount: 0,
   additions: 0,
   deletions: 0,
   changedLineCount: 0,
-};
+  filteredCharCount: 0,
+  maxDiffChars,
+});
 
 declare function acquireVsCodeApi(): VsCodeApi;
 
@@ -54,7 +57,7 @@ function ReviewApp({ initial }: { initial: WebviewInitialState }): React.JSX.Ele
   const [models, setModels] = useState<string[]>([]);
   const [modelsStatus, setModelsStatus] = useState<ModelsStatus>('idle');
   const [modelsMessage, setModelsMessage] = useState('Ollama URL을 입력하세요.');
-  const [diffStats, setDiffStats] = useState<DiffStats>(EMPTY_DIFF_STATS);
+  const [diffStats, setDiffStats] = useState<DiffStats>(() => emptyDiffStats(initial.maxDiffChars));
   const [diffStatsStatus, setDiffStatsStatus] = useState<DiffStatsStatus>('idle');
   const [diffStatsMessage, setDiffStatsMessage] = useState('변경 범위를 계산하는 중...');
   const modelsRequestId = useRef(0);
@@ -63,6 +66,7 @@ function ReviewApp({ initial }: { initial: WebviewInitialState }): React.JSX.Ele
   const running = status === 'running';
   const hasWorkspace = initial.workspaces.length > 0;
   const hasModels = modelsStatus === 'loaded' && models.length > 0;
+  const diffTooLarge = diffStats.filteredCharCount > diffStats.maxDiffChars;
 
   useEffect(() => {
     const listener = ({ data }: MessageEvent<WebviewMessage>): void => {
@@ -80,7 +84,7 @@ function ReviewApp({ initial }: { initial: WebviewInitialState }): React.JSX.Ele
         if (data.requestId !== diffStatsRequestId.current) return;
         setDiffStatsStatus(data.status);
         setDiffStatsMessage(data.message);
-        setDiffStats(data.stats ?? EMPTY_DIFF_STATS);
+        setDiffStats(data.stats ?? emptyDiffStats(initial.maxDiffChars));
         return;
       }
       setStatus(data.status);
@@ -117,19 +121,19 @@ function ReviewApp({ initial }: { initial: WebviewInitialState }): React.JSX.Ele
   useEffect(() => {
     const requestId = ++diffStatsRequestId.current;
     if (workspaceIndex < 0) {
-      setDiffStats(EMPTY_DIFF_STATS);
+      setDiffStats(emptyDiffStats(initial.maxDiffChars));
       setDiffStatsStatus('idle');
       setDiffStatsMessage('워크스페이스를 선택하세요.');
       return;
     }
     if (mode === 'branch' && baseBranch.trim().length === 0) {
-      setDiffStats(EMPTY_DIFF_STATS);
+      setDiffStats(emptyDiffStats(initial.maxDiffChars));
       setDiffStatsStatus('idle');
       setDiffStatsMessage('기준 브랜치를 입력하세요.');
       return;
     }
 
-    setDiffStats(EMPTY_DIFF_STATS);
+    setDiffStats(emptyDiffStats(initial.maxDiffChars));
     setDiffStatsStatus('loading');
     setDiffStatsMessage('Git 변경량을 계산하는 중...');
     const timeout = window.setTimeout(() => {
@@ -241,26 +245,88 @@ function ReviewApp({ initial }: { initial: WebviewInitialState }): React.JSX.Ele
           />
         </Field>
 
-        <section className="diff-summary" data-status={diffStatsStatus}>
+        <section
+          className="diff-summary"
+          data-status={diffStatsStatus}
+          data-over-limit={diffTooLarge}
+        >
           <div className="diff-summary-header">
             <span>리뷰 대상</span>
             <small>{diffStatsMessage}</small>
           </div>
-          <div className="diff-metrics" aria-live="polite">
-            <Metric
-              value={diffStatsStatus === 'loading' ? '…' : diffStats.fileCount}
-              label="파일"
-            />
-            <Metric
-              value={diffStatsStatus === 'loading' ? '…' : diffStats.changedLineCount}
-              label="변경 줄"
-            />
-          </div>
-          {diffStatsStatus === 'loaded' && (
-            <div className="line-breakdown">
-              <span className="additions">+{diffStats.additions}</span>
-              <span className="deletions">-{diffStats.deletions}</span>
+          {diffStatsStatus === 'loading' && (
+            <div className="diff-placeholder" aria-live="polite">
+              파일 목록을 불러오는 중...
             </div>
+          )}
+          {diffStatsStatus === 'error' && (
+            <div className="diff-placeholder error" aria-live="polite">
+              변경 파일을 불러오지 못했습니다.
+            </div>
+          )}
+          {diffStatsStatus === 'loaded' && diffStats.files.length === 0 && (
+            <div className="diff-placeholder" aria-live="polite">
+              리뷰할 변경 파일이 없습니다.
+            </div>
+          )}
+          {diffStatsStatus === 'loaded' && diffStats.files.length > 0 && (
+            <>
+              <div className="file-summary" aria-live="polite">
+                <strong>{formatNumber(diffStats.fileCount)}개 파일</strong>
+                <span>{formatNumber(diffStats.changedLineCount)}줄 변경</span>
+                <span className="additions">+{formatNumber(diffStats.additions)}</span>
+                <span className="deletions">-{formatNumber(diffStats.deletions)}</span>
+              </div>
+              <ul className="file-list">
+                {diffStats.files.map((path) => {
+                  const parts = splitFilePath(path);
+                  return (
+                    <li key={path} title={path}>
+                      <FileIcon />
+                      <span className="file-path">
+                        {parts.directory !== '' && (
+                          <span className="file-directory">{parts.directory}/</span>
+                        )}
+                        <span className="file-name">{parts.name}</span>
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+              <div className="diff-size">
+                <div className="diff-size-label">
+                  <span>필터링된 Diff</span>
+                  <strong>
+                    {formatNumber(diffStats.filteredCharCount)} /{' '}
+                    {formatNumber(diffStats.maxDiffChars)}자
+                  </strong>
+                </div>
+                <div
+                  className="diff-size-track"
+                  role="progressbar"
+                  aria-label="필터링된 Diff 크기"
+                  aria-valuenow={diffStats.filteredCharCount}
+                  aria-valuemin={0}
+                  aria-valuemax={diffStats.maxDiffChars}
+                >
+                  <div
+                    className="diff-size-value"
+                    style={{
+                      width: `${Math.min(
+                        100,
+                        (diffStats.filteredCharCount / diffStats.maxDiffChars) * 100,
+                      )}%`,
+                    }}
+                  />
+                </div>
+                {diffTooLarge && (
+                  <div className="diff-size-error">
+                    최대 크기를 {formatNumber(diffStats.filteredCharCount - diffStats.maxDiffChars)}
+                    자 초과했습니다.
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </section>
 
@@ -272,6 +338,7 @@ function ReviewApp({ initial }: { initial: WebviewInitialState }): React.JSX.Ele
               !hasModels ||
               diffStatsStatus !== 'loaded' ||
               diffStats.fileCount === 0 ||
+              diffTooLarge ||
               running
             }
           >
@@ -321,6 +388,26 @@ function validHttpUrl(value: string): string | undefined {
   } catch {
     return undefined;
   }
+}
+
+function formatNumber(value: number): string {
+  return value.toLocaleString('ko-KR');
+}
+
+function splitFilePath(path: string): { directory: string; name: string } {
+  const separator = path.lastIndexOf('/');
+  return separator < 0
+    ? { directory: '', name: path }
+    : { directory: path.slice(0, separator), name: path.slice(separator + 1) };
+}
+
+function FileIcon(): React.JSX.Element {
+  return (
+    <svg className="file-icon" viewBox="0 0 16 16" aria-hidden="true">
+      <path d="M3 1.5h6l4 4V14.5H3z" />
+      <path d="M9 1.5v4h4" />
+    </svg>
+  );
 }
 
 function Field({

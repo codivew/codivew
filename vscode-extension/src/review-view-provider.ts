@@ -3,6 +3,8 @@ import * as vscode from 'vscode';
 import {
   calculateDiffStats,
   createGitReviewInput,
+  DEFAULT_MAX_DIFF_CHARS,
+  DiffFilterService,
   ERROR_CODES,
   ReviewError,
   ReviewMode,
@@ -94,17 +96,24 @@ export class ReviewViewProvider implements vscode.WebviewViewProvider {
         baseBranch: baseBranch ?? 'main',
         signal: controller.signal,
       });
+      const filtered = new DiffFilterService().filter(input.diff);
       this.postDiffStats(requestId, 'loaded', diffStatsMessage(mode, baseBranch), {
-        ...calculateDiffStats(input.diff),
+        ...calculateDiffStats(filtered.diff),
+        files: filtered.reviewedFiles,
+        filteredCharCount: filtered.filteredCharCount,
+        maxDiffChars: DEFAULT_MAX_DIFF_CHARS,
       });
     } catch (error) {
       if (controller.signal.aborted) return;
       if (error instanceof ReviewError && error.code === ERROR_CODES.EMPTY_DIFF) {
         this.postDiffStats(requestId, 'loaded', diffStatsMessage(mode, baseBranch), {
+          files: [],
           fileCount: 0,
           additions: 0,
           deletions: 0,
           changedLineCount: 0,
+          filteredCharCount: 0,
+          maxDiffChars: DEFAULT_MAX_DIFF_CHARS,
         });
         return;
       }
@@ -298,6 +307,7 @@ export class ReviewViewProvider implements vscode.WebviewViewProvider {
       ollamaUrl: configuration.get('ollamaUrl', 'http://localhost:11434'),
       model: configuration.get('model', 'qwen3.6:35b-a3b-coding-mxfp8'),
       baseBranch: configuration.get('baseBranch', 'main'),
+      maxDiffChars: DEFAULT_MAX_DIFF_CHARS,
     };
   }
 }

@@ -58,9 +58,11 @@ describe('ReviewsService', () => {
   });
 
   it('rejects an oversized filtered diff', async () => {
-    await expect(create(10).createReview(request)).rejects.toMatchObject({
+    const review = create(10).createReview(request);
+    await expect(review).rejects.toMatchObject({
       code: 'DIFF_TOO_LARGE',
     });
+    await expect(review).rejects.toThrow(/현재 \d+자/);
   });
 
   it('retries once after validation failure', async () => {
