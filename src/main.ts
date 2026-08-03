@@ -2,10 +2,10 @@
 
 import { ZodError } from 'zod';
 import { createRequire } from 'node:module';
-import { parseArguments } from './cli/arguments.js';
+import { parseArguments, type CliOptions } from './cli/arguments.js';
 import { setConfig, showConfig } from './cli/config-command.js';
 import { createGitReviewInput } from './cli/git.js';
-import { openReport, writeReport } from './cli/report.js';
+import { openReport, writeReports } from './cli/report.js';
 import { runSetup } from './cli/setup.js';
 import { scheduleUpdateNotification } from './cli/update-notification.js';
 import { errorStyle, outputStyle as style } from './cli/terminal-style.js';
@@ -60,7 +60,7 @@ async function main(): Promise<void> {
     diff: gitInput.diff,
   };
 
-  printInput(request, runtime.ollamaUrl, runtime.model);
+  printInput(request, runtime.ollamaUrl, runtime.model, command.options.format);
   const stopProgress = startProgress();
   let generated: Awaited<ReturnType<ReviewsService['createReview']>>;
   try {
@@ -80,8 +80,9 @@ async function main(): Promise<void> {
     stopProgress();
   }
 
-  const outputPath = await writeReport(generated.html, command.options.output);
-  if (command.options.openReport) await openReport(outputPath);
+  const outputPaths = await writeReports(generated, command.options.format, command.options.output);
+  const openedHtml = command.options.openReport ? outputPaths.html : undefined;
+  if (openedHtml !== undefined) await openReport(openedHtml);
 
   process.stdout.write(
     [
@@ -91,8 +92,13 @@ async function main(): Promise<void> {
       `${style.gray('  검토 파일     ')}${style.cyan(`${generated.reviewedFileCount}개`)}`,
       `${style.gray('  리뷰 항목     ')}${style.yellow(`${generated.issueCount}개`)}`,
       `${style.gray('  처리 시간     ')}${style.blue(`${(generated.elapsedMs / 1000).toFixed(1)}초`)}`,
-      `${style.gray('  결과 파일     ')}${style.cyan(outputPath)}`,
-      command.options.openReport ? style.dim('  브라우저에서 결과를 열었습니다.') : '',
+      ...(outputPaths.html === undefined
+        ? []
+        : [`${style.gray('  HTML          ')}${style.cyan(outputPaths.html)}`]),
+      ...(outputPaths.json === undefined
+        ? []
+        : [`${style.gray('  JSON          ')}${style.cyan(outputPaths.json)}`]),
+      openedHtml === undefined ? '' : style.dim('  브라우저에서 HTML 리포트를 열었습니다.'),
       '',
     ]
       .filter((line, index, lines) => line.length > 0 || index === 0 || index === lines.length - 1)
@@ -113,7 +119,12 @@ async function ensureUserConfig(
   );
 }
 
-function printInput(request: ReviewRequest, baseUrl: string, model: string): void {
+function printInput(
+  request: ReviewRequest,
+  baseUrl: string,
+  model: string,
+  format: CliOptions['format'],
+): void {
   const changedFiles = (request.diff.match(/^diff --git /gm) ?? []).length;
   process.stdout.write(
     [
@@ -129,6 +140,7 @@ function printInput(request: ReviewRequest, baseUrl: string, model: string): voi
       `${style.gray('  Diff size     ')}${style.blue(`${Buffer.byteLength(request.diff, 'utf8')} bytes`)}`,
       `${style.gray('  Ollama        ')}${style.blue(baseUrl)}`,
       `${style.gray('  Model         ')}${style.magenta(model)}`,
+      `${style.gray('  Output        ')}${style.green(outputFormatLabel(format))}`,
       style.gray('────────────────────────────────────────'),
       '',
     ].join('\n'),
@@ -159,6 +171,10 @@ function startProgress(): () => void {
   };
 }
 
+function outputFormatLabel(format: CliOptions['format']): string {
+  return { html: 'HTML', json: 'JSON', both: 'HTML + JSON' }[format];
+}
+
 function verdictLabel(verdict: string): string {
   const labels: Record<string, string> = {
     approve: style.green('승인'),
@@ -171,7 +187,7 @@ function verdictLabel(verdict: string): string {
 function usage(): string {
   return `${style.bold('Usage:')} ${style.cyan('codivew')} ${style.yellow('[working|staged|branch]')} ${style.dim('[options]')}
 
-Codivew Engine으로 로컬 Git diff를 리뷰하고 독립 실행형 HTML 리포트를 생성합니다.
+Codivew Engine으로 로컬 Git diff를 리뷰하고 HTML 또는 JSON 리포트를 생성합니다.
 
 ${style.bold(style.cyan('Commands:'))}
   setup                 Ollama 연결과 모델을 대화형으로 설정
@@ -186,7 +202,8 @@ ${style.bold(style.cyan('Modes:'))}
 ${style.bold(style.cyan('Options:'))}
   -b, --base <branch>    branch 모드 기준 브랜치 (기본값: main)
   -c, --context <text>   프로젝트 설명 추가, 여러 번 사용 가능
-  -o, --output <path>    HTML 결과 파일 경로
+  -o, --output <path>    결과 파일의 기본 경로
+      --format <format>  html, json, both 중 선택 (기본값: html)
       --no-open          브라우저를 열지 않기
       --no-update-notifier 업데이트 알림을 이번 실행에서 끄기
       --ollama-url <url> 이번 실행에서 사용할 Ollama URL

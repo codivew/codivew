@@ -6,11 +6,14 @@ export type CliOptions = {
   mode: ReviewMode;
   baseBranch: string;
   output?: string;
+  format: OutputFormat;
   ollamaUrl?: string;
   model?: string;
   openReport: boolean;
   projectContext: string[];
 };
+
+export type OutputFormat = 'html' | 'json' | 'both';
 
 export type ConfigKey = 'ollama-url' | 'model';
 
@@ -23,6 +26,7 @@ export type CliCommand =
   | { kind: 'run'; options: CliOptions };
 
 const MODES = new Set<string>(Object.values(ReviewMode));
+const OUTPUT_FORMATS = new Set<OutputFormat>(['html', 'json', 'both']);
 
 export function parseArguments(args: readonly string[]): CliCommand {
   if (args[0] === 'setup') {
@@ -34,6 +38,7 @@ export function parseArguments(args: readonly string[]): CliCommand {
   const options: CliOptions = {
     mode: ReviewMode.WORKING,
     baseBranch: 'main',
+    format: 'html',
     openReport: true,
     projectContext: [],
   };
@@ -54,6 +59,17 @@ export function parseArguments(args: readonly string[]): CliCommand {
     }
     if (argument === '--output' || argument === '-o') {
       options.output = requiredValue(args, ++index, argument);
+      continue;
+    }
+    if (argument === '--format') {
+      const format = requiredValue(args, ++index, argument);
+      if (!OUTPUT_FORMATS.has(format as OutputFormat)) {
+        throw new ReviewError(
+          ERROR_CODES.INVALID_ARGUMENT,
+          `지원하지 않는 출력 형식입니다: ${format} (html, json, both 중 선택)`,
+        );
+      }
+      options.format = format as OutputFormat;
       continue;
     }
     if (argument === '--ollama-url') {

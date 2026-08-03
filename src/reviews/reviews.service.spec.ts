@@ -40,6 +40,14 @@ describe('ReviewsService', () => {
     const result = await create().createReview(request);
     expect(result.reviewId).toMatch(/^[A-Za-z0-9_-]{12}$/);
     expect(result).toMatchObject({ verdict: 'approve', issueCount: 0, html: '<html></html>' });
+    expect(result.json).toMatchObject({
+      schemaVersion: 1,
+      model: 'qwen',
+      request: { repository: 'repo', mode: ReviewMode.STAGED },
+      files: { reviewed: ['src/app.ts'], originalCount: 1, excludedCount: 0 },
+      result: valid,
+    });
+    expect(result.json.request).not.toHaveProperty('diff');
     expect(renderer.render).toHaveBeenCalledTimes(1);
   });
 

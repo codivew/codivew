@@ -8,6 +8,7 @@ describe('parseArguments', () => {
       options: {
         mode: ReviewMode.WORKING,
         baseBranch: 'main',
+        format: 'html',
         openReport: true,
         projectContext: [],
       },
@@ -26,6 +27,8 @@ describe('parseArguments', () => {
         'Redis 없음',
         '--output',
         'review.html',
+        '--format',
+        'both',
         '--no-open',
         '--ollama-url',
         'http://ollama.test:11434',
@@ -38,6 +41,7 @@ describe('parseArguments', () => {
         mode: ReviewMode.BRANCH,
         baseBranch: 'develop',
         output: 'review.html',
+        format: 'both',
         ollamaUrl: 'http://ollama.test:11434',
         model: 'qwen',
         openReport: false,
@@ -72,5 +76,9 @@ describe('parseArguments', () => {
       kind: 'run',
       options: { openReport: false },
     });
+  });
+
+  it('rejects an unsupported output format', () => {
+    expect(() => parseArguments(['--format', 'xml'])).toThrow('지원하지 않는 출력 형식입니다');
   });
 });
