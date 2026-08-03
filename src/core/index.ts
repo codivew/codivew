@@ -1,6 +1,15 @@
 export { ERROR_CODES, type ErrorCode } from './common/constants/error-codes.js';
 export { ReviewError } from './common/errors/review-error.js';
 export {
+  getLanguage,
+  parseLanguage,
+  setLanguage,
+  SUPPORTED_LANGUAGES,
+  t,
+  type Language,
+  type MessageKey,
+} from './config/language.js';
+export {
   DEFAULT_MAX_DIFF_CHARS,
   DEFAULT_OLLAMA_MODEL,
   DEFAULT_OLLAMA_TIMEOUT_MS,

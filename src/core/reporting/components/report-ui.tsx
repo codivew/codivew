@@ -1,4 +1,5 @@
 import type { ComponentChildren, VNode } from 'preact';
+import { getLanguage } from '../../config/language.js';
 
 export const SURFACE_BASE_CLASSES =
   'rounded-2xl border border-[var(--line)] bg-[var(--panel)] shadow-[var(--shadow)] print:break-inside-avoid';
@@ -115,5 +116,8 @@ export function formatDateTime(date: Date): string {
   const hours = String(date.getHours()).padStart(2, '0');
   const minutes = String(date.getMinutes()).padStart(2, '0');
   const seconds = String(date.getSeconds()).padStart(2, '0');
+  if (getLanguage() === 'en') {
+    return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')} ${hours}:${minutes}:${seconds}`;
+  }
   return `${year}. ${month}. ${day}. ${hours}:${minutes}:${seconds}`;
 }

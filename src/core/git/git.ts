@@ -2,6 +2,7 @@ import { execFile } from 'node:child_process';
 import { basename } from 'node:path';
 import { ERROR_CODES } from '../common/constants/error-codes.js';
 import { ReviewError } from '../common/errors/review-error.js';
+import { t } from '../config/language.js';
 import { ReviewMode } from '../reviews/types/review-request.js';
 
 export type GitReviewOptions = {
@@ -44,10 +45,7 @@ export async function createGitReviewInput(
     .filter((part) => part.length > 0)
     .join('\n');
   if (diff.trim().length === 0) {
-    throw new ReviewError(
-      ERROR_CODES.EMPTY_DIFF,
-      `리뷰할 변경사항이 없습니다. (mode: ${options.mode})`,
-    );
+    throw new ReviewError(ERROR_CODES.EMPTY_DIFF, t('git.noChanges', { mode: options.mode }));
   }
 
   return {
@@ -106,7 +104,7 @@ function git(
           reject(
             new ReviewError(
               ERROR_CODES.GIT_FAILED,
-              stderr.trim() || error.message || 'Git 명령 실행에 실패했습니다.',
+              stderr.trim() || error.message || t('git.commandFailed'),
               error,
             ),
           );

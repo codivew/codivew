@@ -1,5 +1,6 @@
 import { stdout } from 'node:process';
 import { ERROR_CODES, ReviewError } from '../core/index.js';
+import { parseLanguage, setLanguage, t, type Language } from '../config/language.js';
 import {
   getUserConfigPath,
   loadUserConfig,
@@ -14,10 +15,11 @@ export async function showConfig(): Promise<void> {
   const config = await loadUserConfig(configPath);
   stdout.write(
     [
-      style.bold(style.cyan('Codivew 설정')),
-      `${style.gray('  파일        ')}${configPath}`,
-      `${style.gray('  Ollama URL  ')}${style.blue(config?.ollamaUrl ?? '(미설정)')}`,
-      `${style.gray('  Model       ')}${style.magenta(config?.model ?? '(미설정)')}`,
+      style.bold(style.cyan(t('config.title'))),
+      `${style.gray(t('config.fileLabel'))}${configPath}`,
+      `${style.gray('  Ollama URL  ')}${style.blue(config?.ollamaUrl ?? t('common.notSet'))}`,
+      `${style.gray('  Model       ')}${style.magenta(config?.model ?? t('common.notSet'))}`,
+      `${style.gray('  Language    ')}${style.cyan(config?.language ?? 'ko-KR')}`,
       '',
     ].join('\n'),
   );
@@ -29,17 +31,30 @@ export async function setConfig(key: ConfigKey, value: string): Promise<void> {
   const next =
     key === 'ollama-url'
       ? { ...current, ollamaUrl: parseOllamaUrl(value) }
-      : { ...current, model: requireModel(value) };
+      : key === 'model'
+        ? { ...current, model: requireModel(value) }
+        : { ...current, language: requireLanguage(value) };
   await saveUserConfig(next, configPath);
+  if (next.language !== undefined) setLanguage(next.language);
   stdout.write(
-    `${style.green('✓')} ${style.bold(`${key} 설정을 저장했습니다.`)}\n${style.gray(`  ${configPath}`)}\n`,
+    `${style.green('✓')} ${style.bold(
+      t('config.saved', { key }),
+    )}\n${style.gray(`  ${configPath}`)}\n`,
   );
 }
 
 function requireModel(value: string): string {
   const model = value.trim();
   if (model.length === 0) {
-    throw new ReviewError(ERROR_CODES.CONFIG_INVALID, '모델명은 비어 있을 수 없습니다.');
+    throw new ReviewError(ERROR_CODES.CONFIG_INVALID, t('config.modelRequired'));
   }
   return model;
+}
+
+function requireLanguage(value: string): Language {
+  const language = parseLanguage(value.trim());
+  if (language === undefined) {
+    throw new ReviewError(ERROR_CODES.CONFIG_INVALID, t('config.languageInvalid'));
+  }
+  return language;
 }

@@ -1,4 +1,5 @@
 import type { NotifyOptions, Package, Settings } from 'update-notifier';
+import { t } from '../config/language.js';
 
 const UPDATE_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
@@ -19,8 +20,11 @@ export async function scheduleUpdateNotification(
     notifier.notify({
       defer: true,
       message: [
-        'Codivew 새 버전이 있습니다: {currentVersion} → {latestVersion}',
-        '업데이트: npm install -g {packageName}@latest',
+        t('update.available', {
+          currentVersion: '{currentVersion}',
+          latestVersion: '{latestVersion}',
+        }),
+        t('update.command', { packageName: '{packageName}' }),
       ].join('\n'),
     });
   } catch {

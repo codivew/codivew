@@ -1,4 +1,5 @@
 import type { VNode } from 'preact';
+import { t } from '../../config/language.js';
 import type { ReviewRenderContext } from '../../reviews/types/review-renderer.js';
 import {
   Empty,
@@ -16,9 +17,9 @@ export function ReportFooter({ context }: { context: ReviewRenderContext }): VNo
   return (
     <div class="mt-8 grid grid-cols-2 gap-4 max-[900px]:grid-cols-1">
       <section id="recommended-tests" class={`${PANEL_CLASSES} scroll-mt-5`}>
-        <PanelHeading>권장 테스트</PanelHeading>
+        <PanelHeading>{t('report.recommendedTests')}</PanelHeading>
         {result.tests.length === 0 ? (
-          <Empty>권장 테스트가 없습니다.</Empty>
+          <Empty>{t('report.noRecommendedTests')}</Empty>
         ) : (
           <ul class="space-y-2.5">
             {result.tests.map((test) => (
@@ -31,11 +32,17 @@ export function ReportFooter({ context }: { context: ReviewRenderContext }): VNo
         )}
       </section>
 
-      <Panel title="생성 정보">
+      <Panel title={t('report.generationDetails')}>
         <MetadataList>
-          <MetadataRow label="생성 시각" value={formatDateTime(context.createdAt)} />
-          <MetadataRow label="처리 시간" value={`${(context.elapsedMs / 1000).toFixed(1)}초`} />
-          <MetadataRow label="검토 범위" value={`${filtered.reviewedFiles.length}개 파일`} />
+          <MetadataRow label={t('report.createdAt')} value={formatDateTime(context.createdAt)} />
+          <MetadataRow
+            label={t('report.elapsed')}
+            value={t('common.seconds', { value: (context.elapsedMs / 1000).toFixed(1) })}
+          />
+          <MetadataRow
+            label={t('report.reviewScope')}
+            value={t('report.fileCount', { count: filtered.reviewedFiles.length })}
+          />
         </MetadataList>
       </Panel>
     </div>

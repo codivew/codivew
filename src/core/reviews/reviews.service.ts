@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { ZodError } from 'zod';
 import { ERROR_CODES } from '../common/constants/error-codes.js';
 import { ReviewError } from '../common/errors/review-error.js';
+import { getLanguage, t, type Language } from '../config/language.js';
 import { DiffFilterService } from './diff-filter.service.js';
 import { OllamaService } from './ollama.service.js';
 import { ReviewPromptService } from './review-prompt.service.js';
@@ -26,6 +27,7 @@ export type ReviewJsonReport = {
   createdAt: string;
   elapsedMs: number;
   model: string;
+  language: Language;
   request: Omit<ReviewRequest, 'diff'>;
   files: {
     reviewed: string[];
@@ -52,7 +54,10 @@ export class ReviewsService {
     if (filtered.filteredCharCount > this.maxDiffChars) {
       throw new ReviewError(
         ERROR_CODES.DIFF_TOO_LARGE,
-        `필터링된 Diff가 최대 크기 ${this.maxDiffChars}자를 초과했습니다. (현재 ${filtered.filteredCharCount}자)`,
+        t('review.diffTooLarge', {
+          max: this.maxDiffChars,
+          current: filtered.filteredCharCount,
+        }),
       );
     }
 
@@ -82,6 +87,7 @@ export class ReviewsService {
       createdAt: createdAt.toISOString(),
       elapsedMs,
       model: this.ollama.model,
+      language: getLanguage(),
       request: jsonRequest,
       files: {
         reviewed: filtered.reviewedFiles,
@@ -120,7 +126,7 @@ export class ReviewsService {
         if (!this.isModelInvalid(retryError)) throw retryError;
         throw new ReviewError(
           ERROR_CODES.MODEL_RESPONSE_INVALID,
-          '두 번의 시도에서 모두 모델 응답 검증에 실패했습니다.',
+          t('review.validationFailedTwice'),
           retryError,
         );
       }
@@ -141,6 +147,6 @@ export class ReviewsService {
         .map((issue) => `${issue.path.join('.') || 'root'}: ${issue.message}`)
         .join('; ');
     }
-    return '응답이 유효한 JSON이 아니거나 필수 필드가 없습니다.';
+    return t('review.invalidResponse');
   }
 }

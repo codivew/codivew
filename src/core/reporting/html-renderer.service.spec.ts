@@ -1,8 +1,11 @@
+import { setLanguage } from '../config/language.js';
 import { HtmlRendererService } from './html-renderer.service.js';
 import { ReviewMode } from '../reviews/types/review-request.js';
 
 describe('HtmlRendererService', () => {
   const renderer = new HtmlRendererService();
+
+  afterEach(() => setLanguage('ko-KR'));
 
   it('renders a standalone escaped review report', () => {
     const html = renderer.render({
@@ -167,5 +170,38 @@ ${additions}
     expect(html).toContain('변경 41줄');
     expect(html).toContain('피드백 0개');
     expect(html).toContain('<summary class="diff-file-header ');
+  });
+
+  it('renders report chrome in English when English is selected', () => {
+    setLanguage('en');
+    const diff = `diff --git a/src/app.ts b/src/app.ts
+--- a/src/app.ts
++++ b/src/app.ts
+@@ -1 +1 @@
+-old
++new
+`;
+    const html = renderer.render({
+      reviewId: 'id',
+      createdAt: new Date(0),
+      elapsedMs: 100,
+      model: 'model',
+      request: { repository: 'repo', mode: ReviewMode.STAGED, diff },
+      filtered: {
+        diff,
+        reviewedFiles: ['src/app.ts'],
+        originalFileCount: 1,
+        filteredFileCount: 0,
+        originalCharCount: diff.length,
+        filteredCharCount: diff.length,
+      },
+      result: { verdict: 'approve', risk: 'low', summary: 'Looks good.', issues: [], tests: [] },
+    });
+
+    expect(html).toContain('<html lang="en">');
+    expect(html).toContain('Review summary');
+    expect(html).toContain('No issues found.');
+    expect(html).toContain('Changed code');
+    expect(html).not.toContain('리뷰 요약');
   });
 });

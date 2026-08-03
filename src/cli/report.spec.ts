@@ -11,6 +11,7 @@ const json: ReviewJsonReport = {
   createdAt: '2026-07-28T05:05:09.000Z',
   elapsedMs: 100,
   model: 'qwen',
+  language: 'ko-KR',
   request: { repository: 'repo', mode: ReviewMode.STAGED },
   files: { reviewed: ['src/app.ts'], originalCount: 1, excludedCount: 0 },
   result: { verdict: 'approve', risk: 'low', summary: '좋습니다.', issues: [], tests: [] },

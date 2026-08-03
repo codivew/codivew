@@ -1,4 +1,5 @@
 import type { VNode } from 'preact';
+import { t } from '../../config/language.js';
 import type { ReviewRenderContext } from '../../reviews/types/review-renderer.js';
 import type { ReviewSeverity } from '../../reviews/types/review-result.js';
 import {
@@ -28,7 +29,7 @@ export function ReportOverview({ context }: { context: ReviewRenderContext }): V
     <>
       <section class={`${SURFACE_CLASSES} overflow-hidden`}>
         <div class="border-l-4 border-[var(--accent)] px-6 py-5 max-[700px]:px-4">
-          <PanelHeading>리뷰 요약</PanelHeading>
+          <PanelHeading>{t('report.reviewSummary')}</PanelHeading>
           <p class="max-w-[900px] text-[17px]/7 font-medium tracking-[-0.01em] text-[var(--text)]">
             {result.summary}
           </p>
@@ -37,20 +38,32 @@ export function ReportOverview({ context }: { context: ReviewRenderContext }): V
 
       <div class="overview-layout mb-8 grid grid-cols-[minmax(0,1fr)_minmax(360px,0.9fr)] gap-4 max-[900px]:grid-cols-1">
         <section class={`${SURFACE_BASE_CLASSES} p-5 max-[700px]:p-4`}>
-          <PanelHeading>이슈 현황</PanelHeading>
+          <PanelHeading>{t('report.issueStatus')}</PanelHeading>
           <div class="grid grid-cols-3 gap-3 max-[700px]:gap-2">
-            <Metric severity="must_fix" label="필수 수정" value={counts.must_fix} />
-            <Metric severity="should_fix" label="수정 권장" value={counts.should_fix} />
-            <Metric severity="suggestion" label="제안" value={counts.suggestion} />
+            <Metric
+              severity="must_fix"
+              label={t('report.severity.mustFix')}
+              value={counts.must_fix}
+            />
+            <Metric
+              severity="should_fix"
+              label={t('report.severity.shouldFix')}
+              value={counts.should_fix}
+            />
+            <Metric
+              severity="suggestion"
+              label={t('report.severity.suggestion')}
+              value={counts.suggestion}
+            />
           </div>
         </section>
         <section class={`${SURFACE_BASE_CLASSES} p-5 max-[700px]:p-4`}>
-          <PanelHeading>변경 정보</PanelHeading>
+          <PanelHeading>{t('report.changeDetails')}</PanelHeading>
           <MetadataList>
-            <MetadataRow label="리뷰 ID" value={context.reviewId} mono />
-            <OptionalMetadataRow label="기준 브랜치" value={request.baseBranch} mono />
-            <OptionalMetadataRow label="커밋 SHA" value={request.commitSha} mono />
-            <MetadataRow label="모델" value={context.model} />
+            <MetadataRow label={t('report.reviewId')} value={context.reviewId} mono />
+            <OptionalMetadataRow label={t('report.baseBranch')} value={request.baseBranch} mono />
+            <OptionalMetadataRow label={t('report.commitSha')} value={request.commitSha} mono />
+            <MetadataRow label={t('report.model')} value={context.model} />
           </MetadataList>
         </section>
       </div>

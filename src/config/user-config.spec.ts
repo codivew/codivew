@@ -17,10 +17,14 @@ describe('user config', () => {
   });
 
   it('saves and loads normalized configuration', async () => {
-    await saveUserConfig({ ollamaUrl: 'http://localhost:11434/', model: 'qwen' }, configPath);
+    await saveUserConfig(
+      { ollamaUrl: 'http://localhost:11434/', model: 'qwen', language: 'en' },
+      configPath,
+    );
     await expect(loadUserConfig(configPath)).resolves.toEqual({
       ollamaUrl: 'http://localhost:11434',
       model: 'qwen',
+      language: 'en',
     });
     expect(await readFile(configPath, 'utf8')).toContain('"ollamaUrl"');
   });

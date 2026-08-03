@@ -6,6 +6,7 @@ import {
   ERROR_CODES,
   ReviewError,
 } from '../core/index.js';
+import { parseLanguage, setLanguage, t, type Language } from '../config/language.js';
 import {
   getUserConfigPath,
   parseOllamaUrl,
@@ -20,26 +21,52 @@ type OllamaTagsResponse = {
 
 export async function runSetup(existing: UserConfig = {}): Promise<UserConfig> {
   if (!stdin.isTTY || !stdout.isTTY) {
-    throw new ReviewError(
-      ERROR_CODES.CONFIG_REQUIRED,
-      '대화형 터미널에서 codivew setup을 실행하거나 config set 명령을 사용하세요.',
-    );
+    throw new ReviewError(ERROR_CODES.CONFIG_REQUIRED, t('setup.ttyRequired'));
   }
 
   const prompt = createInterface({ input: stdin, output: stdout });
-  stdout.write(`\n${style.bold(style.cyan('Codivew 초기 설정'))}\n\n`);
 
   try {
+    const language = await askForLanguage(prompt, existing.language ?? 'ko-KR');
+    setLanguage(language);
+    stdout.write(`\n${style.bold(style.cyan(t('setup.title')))}\n\n`);
     const { url, models } = await askForOllama(prompt, existing.ollamaUrl ?? DEFAULT_OLLAMA_URL);
     const model = await askForModel(prompt, models, existing.model ?? DEFAULT_OLLAMA_MODEL);
-    const saved = await saveUserConfig({ ollamaUrl: url, model });
+    const saved = await saveUserConfig({ ollamaUrl: url, model, language });
     stdout.write(
-      `\n${style.green('✓')} ${style.bold('설정을 저장했습니다.')}\n${style.gray(`  ${getUserConfigPath()}`)}\n\n`,
+      `\n${style.green('✓')} ${style.bold(t('setup.saved'))}\n${style.gray(`  ${getUserConfigPath()}`)}\n\n`,
     );
     return saved;
   } finally {
     prompt.close();
   }
+}
+
+async function askForLanguage(
+  prompt: ReturnType<typeof createInterface>,
+  currentLanguage: Language,
+): Promise<Language> {
+  stdout.write(`\n${style.bold(t('setup.languageMenu'))}\n`);
+  const defaultSelection = currentLanguage === 'en' ? '2' : '1';
+  while (true) {
+    const answer = (
+      await prompt.question(t('setup.languageQuestion', { selection: defaultSelection }))
+    ).trim();
+    const language = parseLanguageSelection(answer, currentLanguage);
+    if (language !== undefined) return language;
+    stdout.write(`  ${style.yellow('!')} ${t('setup.languageInvalid')}\n`);
+  }
+}
+
+export function parseLanguageSelection(
+  answer: string,
+  defaultLanguage: Language,
+): Language | undefined {
+  const selected = answer.trim();
+  if (selected.length === 0) return defaultLanguage;
+  if (selected === '1') return 'ko-KR';
+  if (selected === '2') return 'en';
+  return parseLanguage(selected);
 }
 
 export async function listOllamaModels(baseUrl: string, timeoutMs = 10_000): Promise<string[]> {
@@ -51,7 +78,7 @@ export async function listOllamaModels(baseUrl: string, timeoutMs = 10_000): Pro
     if (!response.ok) {
       throw new ReviewError(
         ERROR_CODES.OLLAMA_UNAVAILABLE,
-        `Ollama 연결 확인에 실패했습니다. (HTTP ${response.status})`,
+        t('setup.ollamaCheckFailed', { status: response.status }),
       );
     }
     const body = (await response.json()) as OllamaTagsResponse;
@@ -68,9 +95,13 @@ export async function listOllamaModels(baseUrl: string, timeoutMs = 10_000): Pro
   } catch (error) {
     if (error instanceof ReviewError) throw error;
     const reason = controller.signal.aborted
-      ? '연결 시간이 초과되었습니다.'
-      : '연결할 수 없습니다.';
-    throw new ReviewError(ERROR_CODES.OLLAMA_UNAVAILABLE, `Ollama에 ${reason}`, error);
+      ? t('setup.connectionTimeout')
+      : t('setup.connectionFailed');
+    throw new ReviewError(
+      ERROR_CODES.OLLAMA_UNAVAILABLE,
+      t('setup.ollamaError', { reason }),
+      error,
+    );
   } finally {
     clearTimeout(timeout);
   }
@@ -89,23 +120,27 @@ async function askForOllama(
     ).trim();
     try {
       const url = parseOllamaUrl(answer || suggestedUrl);
-      stdout.write(`  ${style.cyan('●')} Ollama 연결 확인 중...\n`);
+      stdout.write(`  ${style.cyan('●')} ${t('setup.checkingOllama')}\n`);
       const models = await listOllamaModels(url);
       if (models.length === 0) {
         stdout.write(
-          `  ${style.yellow('!')} 설치된 모델이 없습니다. 먼저 ${style.cyan('ollama pull <model>')}을 실행하세요.\n\n`,
+          `  ${style.yellow('!')} ${t('setup.noModels', {
+            command: style.cyan('ollama pull <model>'),
+          })}\n\n`,
         );
         suggestedUrl = url;
         continue;
       }
       stdout.write(
-        `  ${style.green('✓')} 연결됨 ${style.gray('·')} 모델 ${style.bold(`${models.length}개`)}\n\n`,
+        `  ${style.green('✓')} ${t('setup.connected')} ${style.gray('·')} ${t('setup.modelCount', {
+          count: style.bold(`${models.length}`),
+        })}\n\n`,
       );
       return { url, models };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       stdout.write(
-        `  ${style.red('✗')} ${style.red(message)}\n  ${style.yellow('URL을 다시 입력하세요.')}\n\n`,
+        `  ${style.red('✗')} ${style.red(message)}\n  ${style.yellow(t('setup.retryUrl'))}\n\n`,
       );
     }
   }
@@ -116,7 +151,7 @@ async function askForModel(
   models: string[],
   preferredModel: string,
 ): Promise<string> {
-  stdout.write(`${style.bold('사용할 모델')}\n`);
+  stdout.write(`${style.bold(t('setup.modelToUse'))}\n`);
   models.forEach((model, index) =>
     stdout.write(`  ${style.cyan(`${index + 1}.`)} ${style.magenta(model)}\n`),
   );
@@ -126,7 +161,7 @@ async function askForModel(
   while (true) {
     const answer = (
       await prompt.question(
-        `${style.bold('선택')} ${style.dim(`(${defaultSelection})`)}${style.cyan(':')} `,
+        `${style.bold(t('setup.select'))} ${style.dim(`(${defaultSelection})`)}${style.cyan(':')} `,
       )
     ).trim();
     if (answer.length === 0) return models[defaultSelection - 1];
@@ -139,6 +174,6 @@ async function askForModel(
       return models[numericSelection - 1];
     }
     if (models.includes(answer)) return answer;
-    stdout.write(`  ${style.yellow('!')} 번호 또는 모델명을 정확히 입력하세요.\n`);
+    stdout.write(`  ${style.yellow('!')} ${t('setup.invalidModel')}\n`);
   }
 }
