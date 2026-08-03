@@ -1,7 +1,6 @@
-import type { CliOptions } from '../cli/arguments.js';
 import { hasConfiguredRuntimeConfig, resolveRuntimeConfig } from './runtime-config.js';
 
-const options: Pick<CliOptions, 'ollamaUrl' | 'model'> = {};
+const options: { ollamaUrl?: string; model?: string } = {};
 
 describe('runtime config', () => {
   it('applies CLI, user and default precedence', () => {

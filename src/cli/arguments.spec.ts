@@ -1,4 +1,4 @@
-import { ReviewMode } from '../reviews/types/review-request.js';
+import { ReviewMode } from '../core/index.js';
 import { setLanguage } from '../config/language.js';
 import { parseArguments } from './arguments.js';
 

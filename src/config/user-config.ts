@@ -2,8 +2,7 @@ import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { z } from 'zod';
-import { ERROR_CODES } from '../common/constants/error-codes.js';
-import { ReviewError } from '../common/errors/review-error.js';
+import { ERROR_CODES, ReviewError } from '../core/index.js';
 import { SUPPORTED_LANGUAGES, t } from './language.js';
 
 const httpUrl = z

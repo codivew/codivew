@@ -1,6 +1,5 @@
 import { stdout } from 'node:process';
-import { ERROR_CODES } from '../common/constants/error-codes.js';
-import { ReviewError } from '../common/errors/review-error.js';
+import { ERROR_CODES, ReviewError } from '../core/index.js';
 import { parseLanguage, setLanguage, t, type Language } from '../config/language.js';
 import {
   getUserConfigPath,

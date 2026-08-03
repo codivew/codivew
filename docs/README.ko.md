@@ -91,6 +91,14 @@ codivew staged \
 codivew --help
 ```
 
+## VS Code 확장
+
+VS Code 및 Cursor 확장은 별도의 [codivew-vscode](https://github.com/knsan189/codivew-vscode) 저장소에서 관리합니다. 확장은 이 패키지가 `codivew/core`로 공개하는 리뷰 API를 가져와 사용합니다.
+
+```ts
+import { runReview, ReviewMode } from 'codivew/core';
+```
+
 ## 결과 파일
 
 리포트는 명령을 실행한 디렉터리의 `.codivew/`에 저장됩니다. HTML 리포트는 브라우저에서 자동으로 열립니다.

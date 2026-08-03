@@ -91,6 +91,15 @@ View all commands and options with:
 codivew --help
 ```
 
+## VS Code Extension
+
+The VS Code and Cursor extension lives in the separate
+[codivew-vscode](https://github.com/knsan189/codivew-vscode) repository. It imports the reusable review API exposed by this package through `codivew/core`.
+
+```ts
+import { runReview, ReviewMode } from 'codivew/core';
+```
+
 ## Output
 
 Reports are saved under `.codivew/` in the directory where the command was run. HTML reports open automatically in your browser.

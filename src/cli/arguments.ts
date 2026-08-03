@@ -1,7 +1,5 @@
-import { ERROR_CODES } from '../common/constants/error-codes.js';
-import { ReviewError } from '../common/errors/review-error.js';
+import { ERROR_CODES, ReviewError, ReviewMode } from '../core/index.js';
 import { t } from '../config/language.js';
-import { ReviewMode } from '../reviews/types/review-request.js';
 
 export type CliOptions = {
   mode: ReviewMode;

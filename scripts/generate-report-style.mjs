@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { format } from 'prettier';
 
 const compiledCssPath = resolve('.report-style.tmp.css');
-const generatedModulePath = resolve('src/reporting/report-style.generated.ts');
+const generatedModulePath = resolve('src/core/reporting/report-style.generated.ts');
 
 try {
   const css = await readFile(compiledCssPath, 'utf8');

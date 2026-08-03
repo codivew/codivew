@@ -54,7 +54,10 @@ export class ReviewsService {
     if (filtered.filteredCharCount > this.maxDiffChars) {
       throw new ReviewError(
         ERROR_CODES.DIFF_TOO_LARGE,
-        t('review.diffTooLarge', { max: this.maxDiffChars }),
+        t('review.diffTooLarge', {
+          max: this.maxDiffChars,
+          current: filtered.filteredCharCount,
+        }),
       );
     }
 

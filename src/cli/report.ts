@@ -2,10 +2,8 @@ import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, extname, join, resolve } from 'node:path';
-import { ERROR_CODES } from '../common/constants/error-codes.js';
-import { ReviewError } from '../common/errors/review-error.js';
+import { ERROR_CODES, ReviewError, type ReviewJsonReport } from '../core/index.js';
 import { t } from '../config/language.js';
-import type { ReviewJsonReport } from '../reviews/reviews.service.js';
 import type { OutputFormat } from './arguments.js';
 
 export type ReportPaths = {

@@ -1,17 +1,20 @@
 import { z } from 'zod';
-import type { CliOptions } from '../cli/arguments.js';
-import type { UserConfig } from './user-config.js';
 
 export const DEFAULT_OLLAMA_URL = 'http://localhost:11434';
 export const DEFAULT_OLLAMA_MODEL = 'qwen3.6:35b-a3b-coding-mxfp8';
-const DEFAULT_OLLAMA_TIMEOUT_MS = 600_000;
-const DEFAULT_MAX_DIFF_CHARS = 120_000;
+export const DEFAULT_OLLAMA_TIMEOUT_MS = 600_000;
+export const DEFAULT_MAX_DIFF_CHARS = 120_000;
 
 export type RuntimeConfig = {
   ollamaUrl: string;
   model: string;
   timeoutMs: number;
   maxDiffChars: number;
+};
+
+export type RuntimeConfigValues = {
+  ollamaUrl?: string;
+  model?: string;
 };
 
 const runtimeConfigSchema = z.object({
@@ -22,8 +25,8 @@ const runtimeConfigSchema = z.object({
 });
 
 export function resolveRuntimeConfig(
-  options: Pick<CliOptions, 'ollamaUrl' | 'model'>,
-  userConfig?: UserConfig,
+  options: RuntimeConfigValues,
+  userConfig?: RuntimeConfigValues,
 ): RuntimeConfig {
   return runtimeConfigSchema.parse({
     ollamaUrl: options.ollamaUrl ?? userConfig?.ollamaUrl ?? DEFAULT_OLLAMA_URL,
@@ -34,8 +37,8 @@ export function resolveRuntimeConfig(
 }
 
 export function hasConfiguredRuntimeConfig(
-  options: Pick<CliOptions, 'ollamaUrl' | 'model'>,
-  userConfig?: UserConfig,
+  options: RuntimeConfigValues,
+  userConfig?: RuntimeConfigValues,
 ): boolean {
   return (
     (options.ollamaUrl ?? userConfig?.ollamaUrl) !== undefined &&
