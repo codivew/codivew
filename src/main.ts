@@ -4,21 +4,25 @@ import { ZodError } from 'zod';
 import { createRequire } from 'node:module';
 import { parseArguments, type CliOptions } from './cli/arguments.js';
 import { setConfig, showConfig } from './cli/config-command.js';
-import { createGitReviewInput } from './cli/git.js';
 import { openReport, writeReports } from './cli/report.js';
 import { runSetup } from './cli/setup.js';
 import { scheduleUpdateNotification } from './cli/update-notification.js';
 import { errorStyle, outputStyle as style } from './cli/terminal-style.js';
-import { ERROR_CODES } from './common/constants/error-codes.js';
-import { ReviewError } from './common/errors/review-error.js';
-import { hasConfiguredRuntimeConfig, resolveRuntimeConfig } from './config/runtime-config.js';
 import { loadUserConfig, type UserConfig } from './config/user-config.js';
-import { HtmlRendererService } from './reporting/html-renderer.service.js';
-import { DiffFilterService } from './reviews/diff-filter.service.js';
-import { OllamaService } from './reviews/ollama.service.js';
-import { ReviewPromptService } from './reviews/review-prompt.service.js';
-import { ReviewsService } from './reviews/reviews.service.js';
-import { ReviewMode, type ReviewRequest } from './reviews/types/review-request.js';
+import {
+  createGitReviewInput,
+  DiffFilterService,
+  ERROR_CODES,
+  hasConfiguredRuntimeConfig,
+  HtmlRendererService,
+  OllamaService,
+  resolveRuntimeConfig,
+  ReviewError,
+  ReviewMode,
+  ReviewPromptService,
+  ReviewsService,
+  type ReviewRequest,
+} from './core/index.js';
 
 const loadModule = createRequire(import.meta.url);
 const { name, version } = loadModule('../package.json') as { name: string; version: string };

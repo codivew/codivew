@@ -1,0 +1,10 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "incremental": false,
+    "rootDir": "..",
+    "types": ["node", "vscode", "react", "react-dom"]
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "../src/core/**/*.ts", "../src/core/**/*.tsx"],
+  "exclude": ["../src/core/**/*.spec.ts"]
+}

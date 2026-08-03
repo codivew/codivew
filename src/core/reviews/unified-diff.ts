@@ -18,6 +18,13 @@ export type ParsedDiffFile = {
   hunks: ParsedDiffHunk[];
 };
 
+export type DiffStats = {
+  fileCount: number;
+  additions: number;
+  deletions: number;
+  changedLineCount: number;
+};
+
 const normalizePath = (path: string): string =>
   path
     .trim()
@@ -88,4 +95,26 @@ export function parseUnifiedDiff(diff: string): ParsedDiffFile[] {
 
     return [{ path, metadata: metadata.filter(Boolean), hunks }];
   });
+}
+
+export function calculateDiffStats(diff: string): DiffStats {
+  const files = parseUnifiedDiff(diff);
+  let additions = 0;
+  let deletions = 0;
+
+  for (const file of files) {
+    for (const hunk of file.hunks) {
+      for (const line of hunk.lines) {
+        if (line.kind === 'addition') additions += 1;
+        if (line.kind === 'deletion') deletions += 1;
+      }
+    }
+  }
+
+  return {
+    fileCount: files.length,
+    additions,
+    deletions,
+    changedLineCount: additions + deletions,
+  };
 }

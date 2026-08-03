@@ -1,0 +1,134 @@
+{
+  "name": "codivew-vscode",
+  "displayName": "Codivew",
+  "description": "Review Git changes with Codivew and a local Ollama model.",
+  "version": "0.2.0",
+  "publisher": "knsan189",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/knsan189/codivew.git",
+    "directory": "vscode-extension"
+  },
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "extensionKind": [
+    "workspace"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false
+    },
+    "virtualWorkspaces": {
+      "supported": false
+    }
+  },
+  "main": "./dist/extension.cjs",
+  "activationEvents": [
+    "onView:codivew.reviewView",
+    "onCommand:codivew.reviewWorking",
+    "onCommand:codivew.reviewStaged",
+    "onCommand:codivew.reviewBranch"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "codivew.reviewWorking",
+        "title": "Codivew: Review Working Tree"
+      },
+      {
+        "command": "codivew.reviewStaged",
+        "title": "Codivew: Review Staged Changes"
+      },
+      {
+        "command": "codivew.reviewBranch",
+        "title": "Codivew: Review Branch Changes"
+      },
+      {
+        "command": "codivew.openLatestReport",
+        "title": "Codivew: Open Latest Report",
+        "icon": "$(open-preview)"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "codivew",
+          "title": "Codivew",
+          "icon": "media/codivew.svg"
+        }
+      ]
+    },
+    "views": {
+      "codivew": [
+        {
+          "type": "webview",
+          "id": "codivew.reviewView",
+          "name": "Code Review"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "codivew.openLatestReport",
+          "when": "view == codivew.reviewView",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Codivew",
+      "properties": {
+        "codivew.ollamaUrl": {
+          "type": "string",
+          "default": "http://localhost:11434",
+          "description": "Ollama server URL used for code reviews."
+        },
+        "codivew.model": {
+          "type": "string",
+          "default": "qwen3.6:35b-a3b-coding-mxfp8",
+          "description": "Ollama model used for code reviews."
+        },
+        "codivew.baseBranch": {
+          "type": "string",
+          "default": "main",
+          "description": "Default base branch for branch reviews."
+        },
+        "codivew.projectContext": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Project context included in every review prompt."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node esbuild.mjs",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:extension": "npm run build && node test/run-tests.mjs",
+    "test:cursor": "npm run build && node test/run-tests.mjs --cursor",
+    "package": "npm run build && vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@types/node": "^18.19.0",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@types/vscode": "^1.95.0",
+    "@vscode/test-electron": "^3.1.0",
+    "@vscode/vsce": "^3.6.2",
+    "esbuild": "^0.25.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "typescript": "^5.9.2"
+  }
+}

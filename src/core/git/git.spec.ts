@@ -4,7 +4,6 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { ReviewMode } from '../reviews/types/review-request.js';
-import type { CliOptions } from './arguments.js';
 import { createGitReviewInput } from './git.js';
 
 const execFileAsync = promisify(execFile);
@@ -21,6 +20,7 @@ describe('createGitReviewInput', () => {
     await writeFile(join(repository, 'tracked.ts'), 'export const value = 1;\n');
     await git(['add', '.gitignore', 'tracked.ts']);
     await git(['commit', '--quiet', '-m', 'initial']);
+    await git(['branch', '-M', 'main']);
   });
 
   afterEach(async () => {
@@ -51,17 +51,27 @@ describe('createGitReviewInput', () => {
     expect(result.diff).not.toContain('untracked.ts');
   });
 
+  it('collects changes relative to the selected base branch', async () => {
+    await git(['checkout', '--quiet', '-b', 'feature']);
+    await writeFile(join(repository, 'tracked.ts'), 'export const value = 2;\n');
+    await writeFile(join(repository, 'feature.ts'), 'export const feature = true;\n');
+    await git(['add', 'tracked.ts', 'feature.ts']);
+    await git(['commit', '--quiet', '-m', 'feature']);
+
+    const result = await createGitReviewInput(repository, options(ReviewMode.BRANCH));
+
+    expect(result.diff).toContain('diff --git a/tracked.ts b/tracked.ts');
+    expect(result.diff).toContain('diff --git a/feature.ts b/feature.ts');
+  });
+
   async function git(args: string[]): Promise<void> {
     await execFileAsync('git', args, { cwd: repository });
   }
 });
 
-function options(mode: ReviewMode): CliOptions {
+function options(mode: ReviewMode): { mode: ReviewMode; baseBranch: string } {
   return {
     mode,
     baseBranch: 'main',
-    format: 'html',
-    openReport: false,
-    projectContext: [],
   };
 }

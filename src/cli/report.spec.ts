@@ -2,8 +2,7 @@ import { jest } from '@jest/globals';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import type { ReviewJsonReport } from '../reviews/reviews.service.js';
-import { ReviewMode } from '../reviews/types/review-request.js';
+import { ReviewMode, type ReviewJsonReport } from '../core/index.js';
 import { writeReports } from './report.js';
 
 const json: ReviewJsonReport = {

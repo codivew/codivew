@@ -1,4 +1,4 @@
-import { parseUnifiedDiff } from './unified-diff.js';
+import { calculateDiffStats, parseUnifiedDiff } from './unified-diff.js';
 
 describe('parseUnifiedDiff', () => {
   it('parses file hunks and old/new line numbers', () => {
@@ -39,6 +39,31 @@ deleted file mode 100644
       kind: 'deletion',
       content: 'old',
       oldLine: 1,
+    });
+  });
+
+  it('counts changed files, additions, and deletions', () => {
+    const stats = calculateDiffStats(`diff --git a/src/app.ts b/src/app.ts
+--- a/src/app.ts
++++ b/src/app.ts
+@@ -1,2 +1,3 @@
+-old
++new
++added
+ context
+diff --git a/src/new.ts b/src/new.ts
+new file mode 100644
+--- /dev/null
++++ b/src/new.ts
+@@ -0,0 +1 @@
++export const value = true;
+`);
+
+    expect(stats).toEqual({
+      fileCount: 2,
+      additions: 3,
+      deletions: 1,
+      changedLineCount: 4,
     });
   });
 });

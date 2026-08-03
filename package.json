@@ -1,6 +1,6 @@
 {
   "name": "codivew",
-  "version": "0.1.6",
+  "version": "0.2.0",
   "private": false,
   "type": "module",
   "description": "Codivew CLI for local AI code reviews powered by Ollama",
@@ -24,6 +24,9 @@
   "bin": {
     "codivew": "dist/main.js"
   },
+  "workspaces": [
+    "vscode-extension"
+  ],
   "files": [
     "dist",
     "docs"
@@ -34,19 +37,26 @@
   "scripts": {
     "dev": "node --loader ts-node/esm src/main.ts",
     "clean": "node scripts/clean-dist.mjs",
-    "generate:report-style": "tailwindcss -i ./src/reporting/report.css -o ./.report-style.tmp.css --minify && node scripts/generate-report-style.mjs",
+    "generate:report-style": "tailwindcss -i ./src/core/reporting/report.css -o ./.report-style.tmp.css --minify && node scripts/generate-report-style.mjs",
     "predev": "npm run generate:report-style",
     "prebuild": "npm run clean && npm run generate:report-style",
     "build": "tsc -p tsconfig.build.json",
+    "build:extension": "npm run generate:report-style && npm run build --workspace=codivew-vscode",
+    "build:all": "npm run build && npm run build:extension",
     "check": "npm run typecheck && npm run lint && npm test",
+    "check:extension": "npm run typecheck --workspace=codivew-vscode",
+    "check:all": "npm run check && npm run check:extension",
+    "test:extension": "npm run test:extension --workspace=codivew-vscode",
+    "test:extension:cursor": "npm run test:cursor --workspace=codivew-vscode",
     "pretypecheck": "npm run generate:report-style",
     "typecheck": "tsc --noEmit --incremental false",
-    "lint": "eslint \"src/**/*.{ts,tsx}\"",
-    "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"*.{json,md,mjs}\" \"scripts/**/*.mjs\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"*.{json,md,mjs}\" \"scripts/**/*.mjs\"",
+    "lint": "eslint \"src/**/*.{ts,tsx}\" \"vscode-extension/src/**/*.{ts,tsx}\"",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"vscode-extension/**/*.{ts,tsx,css,json,md,mjs,cjs}\" \"*.{json,md,mjs}\" \"scripts/**/*.mjs\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"vscode-extension/**/*.{ts,tsx,css,json,md,mjs,cjs}\" \"*.{json,md,mjs}\" \"scripts/**/*.mjs\"",
     "pretest": "npm run generate:report-style",
     "test": "jest --config jest.config.mjs",
-    "prepack": "npm run check && npm run build"
+    "prepack": "npm run check && npm run build",
+    "package:extension": "npm run package --workspace=codivew-vscode"
   },
   "dependencies": {
     "preact": "^10.29.7",

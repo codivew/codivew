@@ -1,8 +1,11 @@
 import { createInterface } from 'node:readline/promises';
 import { stdin, stdout } from 'node:process';
-import { ERROR_CODES } from '../common/constants/error-codes.js';
-import { ReviewError } from '../common/errors/review-error.js';
-import { DEFAULT_OLLAMA_MODEL, DEFAULT_OLLAMA_URL } from '../config/runtime-config.js';
+import {
+  DEFAULT_OLLAMA_MODEL,
+  DEFAULT_OLLAMA_URL,
+  ERROR_CODES,
+  ReviewError,
+} from '../core/index.js';
 import {
   getUserConfigPath,
   parseOllamaUrl,

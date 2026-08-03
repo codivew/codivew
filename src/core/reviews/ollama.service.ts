@@ -9,6 +9,7 @@ export type OllamaOptions = {
   baseUrl: string;
   model: string;
   timeoutMs: number;
+  signal?: AbortSignal;
 };
 
 export class OllamaService {
@@ -21,8 +22,18 @@ export class OllamaService {
   }
 
   async generateReview(prompts: ReviewPrompts): Promise<unknown> {
+    const callerCancelled = (): boolean => this.options.signal?.aborted ?? false;
+    if (callerCancelled()) {
+      throw new ReviewError(ERROR_CODES.CANCELLED, '리뷰가 취소되었습니다.');
+    }
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), this.options.timeoutMs);
+    let timedOut = false;
+    const abortFromCaller = (): void => controller.abort();
+    this.options.signal?.addEventListener('abort', abortFromCaller, { once: true });
+    const timeout = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, this.options.timeoutMs);
 
     try {
       const response = await fetch(`${this.baseUrl}/api/chat`, {
@@ -64,12 +75,16 @@ export class OllamaService {
       }
     } catch (error) {
       if (error instanceof ReviewError) throw error;
-      const message = controller.signal.aborted
+      if (callerCancelled()) {
+        throw new ReviewError(ERROR_CODES.CANCELLED, '리뷰가 취소되었습니다.', error);
+      }
+      const message = timedOut
         ? `Ollama 응답 시간이 ${this.options.timeoutMs}ms를 초과했습니다.`
         : `Ollama에 연결할 수 없습니다: ${this.baseUrl}`;
       throw new ReviewError(ERROR_CODES.OLLAMA_UNAVAILABLE, message, error);
     } finally {
       clearTimeout(timeout);
+      this.options.signal?.removeEventListener('abort', abortFromCaller);
     }
   }
 
