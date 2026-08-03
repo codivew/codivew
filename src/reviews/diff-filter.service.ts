@@ -1,5 +1,6 @@
 import { ERROR_CODES } from '../common/constants/error-codes.js';
 import { ReviewError } from '../common/errors/review-error.js';
+import { t } from '../config/language.js';
 
 export type FilteredDiffResult = {
   diff: string;
@@ -36,7 +37,7 @@ export class DiffFilterService {
     }
 
     if (kept.length === 0) {
-      throw new ReviewError(ERROR_CODES.EMPTY_DIFF, '리뷰할 수 있는 Diff가 없습니다.');
+      throw new ReviewError(ERROR_CODES.EMPTY_DIFF, t('review.emptyDiff'));
     }
 
     const diff = `${kept.map(({ block }) => block).join('\n')}\n`;
