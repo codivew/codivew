@@ -15,11 +15,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/knsan189/codivew.git"
+    "url": "git+https://github.com/codivew/codivew.git"
   },
-  "homepage": "https://github.com/knsan189/codivew#readme",
+  "homepage": "https://github.com/codivew/codivew#readme",
   "bugs": {
-    "url": "https://github.com/knsan189/codivew/issues"
+    "url": "https://github.com/codivew/codivew/issues"
   },
   "bin": {
     "codivew": "dist/main.js"
