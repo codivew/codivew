@@ -6,6 +6,7 @@ import {
   DEFAULT_OLLAMA_URL,
 } from './config/runtime-config.js';
 import { createGitReviewInput } from './git/git.js';
+import type { Language } from './config/language.js';
 import { HtmlRendererService } from './reporting/html-renderer.service.js';
 import { DiffFilterService } from './reviews/diff-filter.service.js';
 import { OllamaService } from './reviews/ollama.service.js';
@@ -17,6 +18,7 @@ export type ReviewProgressStage = 'collecting-diff' | 'generating-review' | 'com
 
 export type RunReviewOptions = {
   cwd: string;
+  locale?: Language;
   mode?: ReviewMode;
   baseBranch?: string;
   projectContext?: string[];
@@ -44,6 +46,7 @@ export async function runReview(options: RunReviewOptions): Promise<RunReviewRes
   });
   const request: ReviewRequest = {
     repository: basename(gitInput.repositoryRoot),
+    ...(options.locale === undefined ? {} : { locale: options.locale }),
     baseBranch: mode === ReviewMode.BRANCH ? baseBranch : undefined,
     mode,
     commitSha: gitInput.commitSha,

@@ -44,12 +44,24 @@ describe('ReviewsService', () => {
       schemaVersion: 1,
       model: 'qwen',
       language: 'ko-KR',
-      request: { repository: 'repo', mode: ReviewMode.STAGED },
+      request: { repository: 'repo', locale: 'ko-KR', mode: ReviewMode.STAGED },
       files: { reviewed: ['src/app.ts'], originalCount: 1, excludedCount: 0 },
       result: valid,
     });
     expect(result.json.request).not.toHaveProperty('diff');
     expect(renderer.render).toHaveBeenCalledTimes(1);
+  });
+
+  it('records the request locale and builds a localized prompt', async () => {
+    ollama.generateReview.mockResolvedValue(valid);
+
+    const result = await create().createReview({ ...request, locale: 'en' });
+
+    expect(result.json.language).toBe('en');
+    expect(result.json.request.locale).toBe('en');
+    expect(ollama.generateReview.mock.calls[0]?.[0].system).toContain(
+      'Write every explanation in English.',
+    );
   });
 
   it('rejects an entirely filtered diff', async () => {

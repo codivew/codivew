@@ -1,3 +1,5 @@
+import type { Language } from '../../config/language.js';
+
 export enum ReviewMode {
   WORKING = 'working',
   STAGED = 'staged',
@@ -6,6 +8,7 @@ export enum ReviewMode {
 
 export type ReviewRequest = {
   repository: string;
+  locale?: Language;
   baseBranch?: string;
   mode: ReviewMode;
   commitSha?: string;
