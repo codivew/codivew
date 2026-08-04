@@ -56,12 +56,23 @@ describe('runReview', () => {
         }),
     } as Response);
 
-    const result = await runReview({ cwd: repository, mode: ReviewMode.WORKING });
+    const result = await runReview({
+      cwd: repository,
+      locale: 'en',
+      mode: ReviewMode.WORKING,
+    });
 
     expect(result.repositoryRoot).toBe(await realpath(repository));
+    expect(result.request.locale).toBe('en');
+    expect(result.json.language).toBe('en');
     expect(result.issueCount).toBe(1);
     expect(result.json.result.issues[0]).toMatchObject({ file: 'value.ts', line: 1 });
     expect(result.html).toContain('값 변경 확인');
+    const requestBody = JSON.parse(
+      (global.fetch as jest.MockedFunction<typeof fetch>).mock.calls[0]?.[1]?.body as string,
+    ) as { messages: Array<{ role: string; content: string }> };
+    expect(requestBody.messages[0]?.content).toContain('Write every explanation in English.');
+    expect(requestBody.messages[1]?.content).toContain('Review the following changes');
   });
 
   async function git(args: string[]): Promise<void> {

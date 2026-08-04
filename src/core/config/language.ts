@@ -410,7 +410,11 @@ export function getLanguage(): Language {
 }
 
 export function t(key: MessageKey, values: MessageValues = {}): string {
-  const template: string = MESSAGES[key][activeLanguage];
+  return translate(activeLanguage, key, values);
+}
+
+export function translate(language: Language, key: MessageKey, values: MessageValues = {}): string {
+  const template: string = MESSAGES[key][language];
   return template.replace(/\{([A-Za-z][A-Za-z0-9]*)\}/g, (placeholder, name: string) => {
     const value = values[name];
     return value === undefined ? placeholder : String(value);

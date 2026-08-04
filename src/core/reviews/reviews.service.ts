@@ -74,8 +74,10 @@ export class ReviewsService {
       result,
     };
     const html = this.renderer.render(context);
+    const locale = request.locale ?? getLanguage();
     const jsonRequest: Omit<ReviewRequest, 'diff'> = {
       repository: request.repository,
+      locale,
       mode: request.mode,
       ...(request.baseBranch === undefined ? {} : { baseBranch: request.baseBranch }),
       ...(request.commitSha === undefined ? {} : { commitSha: request.commitSha }),
@@ -87,7 +89,7 @@ export class ReviewsService {
       createdAt: createdAt.toISOString(),
       elapsedMs,
       model: this.ollama.model,
-      language: getLanguage(),
+      language: locale,
       request: jsonRequest,
       files: {
         reviewed: filtered.reviewedFiles,
