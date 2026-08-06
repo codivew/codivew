@@ -1,7 +1,7 @@
 import { jest } from '@jest/globals';
 import { ReviewError } from '../common/errors/review-error.js';
 import { DiffFilterService } from './diff-filter.service.js';
-import { OllamaService } from './ollama.service.js';
+import { OpenAICompatibleService } from './openai-compatible.service.js';
 import { ReviewPromptService } from './review-prompt.service.js';
 import { ReviewsService } from './reviews.service.js';
 import { ReviewMode, type ReviewRequest } from './types/review-request.js';
@@ -20,23 +20,23 @@ describe('ReviewsService', () => {
   const renderer = {
     render: jest.fn<ReviewRenderer['render']>().mockReturnValue('<html></html>'),
   };
-  const ollama = {
+  const modelClient = {
     model: 'qwen',
-    generateReview: jest.fn<OllamaService['generateReview']>(),
+    generateReview: jest.fn<OpenAICompatibleService['generateReview']>(),
   };
   const create = (maxDiffChars = 10_000): ReviewsService =>
     new ReviewsService(
       maxDiffChars,
       new DiffFilterService(),
       new ReviewPromptService(),
-      ollama as unknown as OllamaService,
+      modelClient as unknown as OpenAICompatibleService,
       renderer,
     );
 
   beforeEach(() => jest.clearAllMocks());
 
   it('generates a standalone HTML review', async () => {
-    ollama.generateReview.mockResolvedValue(valid);
+    modelClient.generateReview.mockResolvedValue(valid);
     const result = await create().createReview(request);
     expect(result.reviewId).toMatch(/^[A-Za-z0-9_-]{12}$/);
     expect(result).toMatchObject({ verdict: 'approve', issueCount: 0, html: '<html></html>' });
@@ -53,13 +53,13 @@ describe('ReviewsService', () => {
   });
 
   it('records the request locale and builds a localized prompt', async () => {
-    ollama.generateReview.mockResolvedValue(valid);
+    modelClient.generateReview.mockResolvedValue(valid);
 
     const result = await create().createReview({ ...request, locale: 'en' });
 
     expect(result.json.language).toBe('en');
     expect(result.json.request.locale).toBe('en');
-    expect(ollama.generateReview.mock.calls[0]?.[0].system).toContain(
+    expect(modelClient.generateReview.mock.calls[0]?.[0].system).toContain(
       'Write every explanation in English.',
     );
   });
@@ -79,16 +79,18 @@ describe('ReviewsService', () => {
   });
 
   it('retries once after validation failure', async () => {
-    ollama.generateReview.mockResolvedValueOnce({ invalid: true }).mockResolvedValueOnce(valid);
+    modelClient.generateReview
+      .mockResolvedValueOnce({ invalid: true })
+      .mockResolvedValueOnce(valid);
     await expect(create().createReview(request)).resolves.toMatchObject({ verdict: 'approve' });
-    expect(ollama.generateReview).toHaveBeenCalledTimes(2);
+    expect(modelClient.generateReview).toHaveBeenCalledTimes(2);
   });
 
   it('fails when both model responses are invalid', async () => {
-    ollama.generateReview.mockResolvedValue({ invalid: true });
+    modelClient.generateReview.mockResolvedValue({ invalid: true });
     await expect(create().createReview(request)).rejects.toMatchObject({
       code: 'MODEL_RESPONSE_INVALID',
     });
-    expect(ollama.generateReview).toHaveBeenCalledTimes(2);
+    expect(modelClient.generateReview).toHaveBeenCalledTimes(2);
   });
 });

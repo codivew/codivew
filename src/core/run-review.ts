@@ -1,15 +1,16 @@
 import { basename } from 'node:path';
 import {
   DEFAULT_MAX_DIFF_CHARS,
-  DEFAULT_OLLAMA_MODEL,
-  DEFAULT_OLLAMA_TIMEOUT_MS,
-  DEFAULT_OLLAMA_URL,
+  DEFAULT_API_TIMEOUT_MS,
+  DEFAULT_API_URL,
+  DEFAULT_MODEL,
+  type Authentication,
 } from './config/runtime-config.js';
 import { createGitReviewInput } from './git/git.js';
 import type { Language } from './config/language.js';
 import { HtmlRendererService } from './reporting/html-renderer.service.js';
 import { DiffFilterService } from './reviews/diff-filter.service.js';
-import { OllamaService } from './reviews/ollama.service.js';
+import { OpenAICompatibleService } from './reviews/openai-compatible.service.js';
 import { ReviewPromptService } from './reviews/review-prompt.service.js';
 import { ReviewsService, type GeneratedReview } from './reviews/reviews.service.js';
 import { ReviewMode, type ReviewRequest } from './reviews/types/review-request.js';
@@ -22,8 +23,9 @@ export type RunReviewOptions = {
   mode?: ReviewMode;
   baseBranch?: string;
   projectContext?: string[];
-  ollamaUrl?: string;
+  apiUrl?: string;
   model?: string;
+  authentication?: Authentication;
   timeoutMs?: number;
   maxDiffChars?: number;
   signal?: AbortSignal;
@@ -62,10 +64,11 @@ export async function runReview(options: RunReviewOptions): Promise<RunReviewRes
     options.maxDiffChars ?? DEFAULT_MAX_DIFF_CHARS,
     new DiffFilterService(),
     new ReviewPromptService(),
-    new OllamaService({
-      baseUrl: options.ollamaUrl ?? DEFAULT_OLLAMA_URL,
-      model: options.model ?? DEFAULT_OLLAMA_MODEL,
-      timeoutMs: options.timeoutMs ?? DEFAULT_OLLAMA_TIMEOUT_MS,
+    new OpenAICompatibleService({
+      baseUrl: options.apiUrl ?? DEFAULT_API_URL,
+      model: options.model ?? DEFAULT_MODEL,
+      authentication: options.authentication,
+      timeoutMs: options.timeoutMs ?? DEFAULT_API_TIMEOUT_MS,
       signal: options.signal,
     }),
     new HtmlRendererService(),

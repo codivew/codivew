@@ -4,8 +4,9 @@ import { parseLanguage, setLanguage, t, type Language } from '../config/language
 import {
   getUserConfigPath,
   loadUserConfig,
-  parseOllamaUrl,
+  parseApiUrl,
   saveUserConfig,
+  type UserConfig,
 } from '../config/user-config.js';
 import type { ConfigKey } from './arguments.js';
 import { outputStyle as style } from './terminal-style.js';
@@ -17,8 +18,9 @@ export async function showConfig(): Promise<void> {
     [
       style.bold(style.cyan(t('config.title'))),
       `${style.gray(t('config.fileLabel'))}${configPath}`,
-      `${style.gray('  Ollama URL  ')}${style.blue(config?.ollamaUrl ?? t('common.notSet'))}`,
+      `${style.gray('  API URL     ')}${style.blue(config?.apiUrl ?? t('common.notSet'))}`,
       `${style.gray('  Model       ')}${style.magenta(config?.model ?? t('common.notSet'))}`,
+      `${style.gray('  Auth        ')}${style.cyan(authenticationLabel(config?.authentication))}`,
       `${style.gray('  Language    ')}${style.cyan(config?.language ?? 'ko-KR')}`,
       '',
     ].join('\n'),
@@ -29,8 +31,8 @@ export async function setConfig(key: ConfigKey, value: string): Promise<void> {
   const configPath = getUserConfigPath();
   const current = (await loadUserConfig(configPath)) ?? {};
   const next =
-    key === 'ollama-url'
-      ? { ...current, ollamaUrl: parseOllamaUrl(value) }
+    key === 'api-url' || key === 'ollama-url'
+      ? { ...current, apiUrl: parseApiUrl(key === 'ollama-url' ? legacyApiUrl(value) : value) }
       : key === 'model'
         ? { ...current, model: requireModel(value) }
         : { ...current, language: requireLanguage(value) };
@@ -41,6 +43,17 @@ export async function setConfig(key: ConfigKey, value: string): Promise<void> {
       t('config.saved', { key }),
     )}\n${style.gray(`  ${configPath}`)}\n`,
   );
+}
+
+function authenticationLabel(authentication: UserConfig['authentication']): string {
+  if (authentication?.type === 'api-key') return 'API Key (configured)';
+  if (authentication?.type === 'basic') return `Basic (${authentication.username})`;
+  return 'None';
+}
+
+function legacyApiUrl(value: string): string {
+  const normalized = value.replace(/\/+$/, '');
+  return normalized.endsWith('/v1') ? normalized : `${normalized}/v1`;
 }
 
 function requireModel(value: string): string {

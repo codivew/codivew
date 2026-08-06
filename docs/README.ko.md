@@ -6,7 +6,7 @@
 [![npm downloads](https://img.shields.io/npm/dm/codivew.svg)](https://www.npmjs.com/package/codivew)
 [![license](https://img.shields.io/npm/l/codivew.svg)](https://github.com/knsan189/codivew/blob/main/LICENSE)
 
-Codivew는 Git 변경사항을 Ollama 코딩 모델로 검토하고 HTML 또는 기계 판독 가능한 JSON 리포트를 생성합니다. 별도 서버나 데이터베이스 없이 로컬에서 실행됩니다.
+Codivew는 OpenAI-compatible API로 Git 변경사항을 검토하고 HTML 또는 기계 판독 가능한 JSON 리포트를 생성합니다. 별도 Codivew 서버나 데이터베이스는 필요하지 않습니다.
 
 ## 주요 기능
 
@@ -20,9 +20,9 @@ Codivew는 Git 변경사항을 Ollama 코딩 모델로 검토하고 HTML 또는 
 
 - Node.js 18 이상
 - Git
-- 로컬 또는 네트워크에서 접근 가능한 Ollama
+- 모델 목록과 Chat Completion을 지원하는 OpenAI-compatible API
 
-리뷰를 시작하기 전에 코딩 모델을 설치하세요.
+로컬 Ollama도 OpenAI-compatible 엔드포인트로 사용할 수 있습니다. 먼저 모델을 설치하세요.
 
 ```bash
 ollama pull qwen3.6:35b-a3b-coding-mxfp8
@@ -35,7 +35,9 @@ npm install -g codivew
 codivew setup
 ```
 
-`setup`에서 `ko-KR` 또는 `en`을 선택한 뒤 Ollama에 연결하고 언어, URL, 모델을 저장합니다. 기본 언어는 한국어입니다. 영어를 선택하면 CLI 메시지, 생성되는 리뷰 피드백, HTML 리포트 문구가 영어로 표시됩니다. 저장된 설정이 없다면 첫 대화형 리뷰 전에 자동으로 실행됩니다.
+`setup`에서 `ko-KR` 또는 `en`, 인증 방식(없음, API Key/Bearer, Basic Authentication), API URL, `GET /v1/models`가 반환한 모델을 선택합니다. 리뷰 요청은 `POST /v1/chat/completions`를 사용합니다. 로컬 Ollama 기본값은 인증 없는 `http://localhost:11434/v1`입니다.
+
+엔드포인트나 인증을 변경하려면 언제든 `codivew setup`을 다시 실행하세요. 인증 정보는 터미널에 표시하지 않고 사용자만 읽을 수 있는 권한의 설정 파일에 저장하며, `config show`에서도 실제 값은 노출하지 않습니다.
 
 setup을 다시 실행하지 않고 저장된 언어만 변경할 수도 있습니다.
 
@@ -77,11 +79,11 @@ codivew staged \
   --context "Node.js 18 이상을 지원해야 함"
 ```
 
-이번 리뷰에만 다른 Ollama 서버나 모델을 사용할 수도 있습니다.
+이번 리뷰에만 다른 OpenAI-compatible API나 모델을 사용할 수도 있습니다. 저장된 인증 정보는 그대로 사용합니다.
 
 ```bash
 codivew staged \
-  --ollama-url http://ollama.example.com:11434 \
+  --api-url https://api.example.com/v1 \
   --model qwen3.6:35b-a3b-coding-mxfp8
 ```
 
