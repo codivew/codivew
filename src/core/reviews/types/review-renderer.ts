@@ -13,5 +13,5 @@ export type ReviewRenderContext = {
 };
 
 export interface ReviewRenderer {
-  render(context: ReviewRenderContext): string;
+  render(context: ReviewRenderContext): Promise<string>;
 }

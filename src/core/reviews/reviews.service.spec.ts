@@ -18,7 +18,7 @@ const valid = { verdict: 'approve', risk: 'low', summary: '좋습니다.', issue
 
 describe('ReviewsService', () => {
   const renderer = {
-    render: jest.fn<ReviewRenderer['render']>().mockReturnValue('<html></html>'),
+    render: jest.fn<ReviewRenderer['render']>().mockResolvedValue('<html></html>'),
   };
   const ollama = {
     model: 'qwen',

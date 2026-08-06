@@ -17,6 +17,7 @@ const config = {
     ],
   },
   moduleNameMapper: {
+    '^shiki$': '<rootDir>/shiki.jest.cjs',
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
   collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/main.ts'],

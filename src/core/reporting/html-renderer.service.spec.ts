@@ -7,8 +7,8 @@ describe('HtmlRendererService', () => {
 
   afterEach(() => setLanguage('ko-KR'));
 
-  it('renders a standalone escaped review report', () => {
-    const html = renderer.render({
+  it('renders a standalone escaped review report', async () => {
+    const html = await renderer.render({
       reviewId: '550e8400-e29b-41d4-a716-446655440000',
       createdAt: new Date('2026-01-01T00:00:00Z'),
       elapsedMs: 42,
@@ -52,8 +52,8 @@ describe('HtmlRendererService', () => {
     expect(html).toContain('body.vscode-dark');
   });
 
-  it('renders empty states and omits absent optional fields', () => {
-    const html = renderer.render({
+  it('renders empty states and omits absent optional fields', async () => {
+    const html = await renderer.render({
       reviewId: 'id',
       createdAt: new Date(0),
       elapsedMs: 0,
@@ -75,7 +75,7 @@ describe('HtmlRendererService', () => {
     expect(html).toMatch(/<dt class="[^"]*">처리 시간<\/dt><dd class="[^"]*">0\.0초<\/dd>/);
   });
 
-  it('renders a numbered diff and links feedback to its code line', () => {
+  it('renders a numbered diff and links feedback to its code line', async () => {
     const diff = `diff --git a/src/app.ts b/src/app.ts
 --- a/src/app.ts
 +++ b/src/app.ts
@@ -84,7 +84,7 @@ describe('HtmlRendererService', () => {
 +const value = newValue;
  return value;
 `;
-    const html = renderer.render({
+    const html = await renderer.render({
       reviewId: 'id',
       createdAt: new Date(0),
       elapsedMs: 0,
@@ -132,12 +132,15 @@ describe('HtmlRendererService', () => {
     expect(html).toMatch(/<details class="diff-file [^"]+" id="diff-file-0" open>/);
     expect(html).toContain('변경 2줄');
     expect(html).toContain('피드백 1개');
+    expect(html).toContain('class="syntax-token"');
+    expect(html).toContain('--shiki-light:');
+    expect(html).toContain('--shiki-dark:');
     expect(html).toMatch(/<h2 class="[^"]+">수정 권장<\/h2>/);
     expect(html).not.toMatch(/<h2 class="[^"]+">필수 수정<\/h2>/);
     expect(html).not.toMatch(/<h2 class="[^"]+">제안<\/h2>/);
   });
 
-  it('collapses long file diffs by default', () => {
+  it('collapses long file diffs by default', async () => {
     const additions = Array.from(
       { length: 41 },
       (_, index) => `+const value${index} = ${index};`,
@@ -148,7 +151,7 @@ describe('HtmlRendererService', () => {
 @@ -0,0 +1,41 @@
 ${additions}
 `;
-    const html = renderer.render({
+    const html = await renderer.render({
       reviewId: 'id',
       createdAt: new Date(0),
       elapsedMs: 0,
@@ -172,7 +175,7 @@ ${additions}
     expect(html).toContain('<summary class="diff-file-header ');
   });
 
-  it('renders report chrome in English when English is selected', () => {
+  it('renders report chrome in English when English is selected', async () => {
     setLanguage('en');
     const diff = `diff --git a/src/app.ts b/src/app.ts
 --- a/src/app.ts
@@ -181,7 +184,7 @@ ${additions}
 -old
 +new
 `;
-    const html = renderer.render({
+    const html = await renderer.render({
       reviewId: 'id',
       createdAt: new Date(0),
       elapsedMs: 100,

@@ -1,20 +1,22 @@
 import type { VNode } from 'preact';
 import { getLanguage } from '../config/language.js';
 import type { ReviewRenderContext } from '../reviews/types/review-renderer.js';
-import { parseUnifiedDiff } from '../reviews/unified-diff.js';
+import type { ParsedDiffFile } from '../reviews/unified-diff.js';
 import { IssueSections } from './components/issue-sections.js';
 import { ReportFooter } from './components/report-footer.js';
 import { ReportHeader } from './components/report-header.js';
 import { ReportOverview } from './components/report-overview.js';
 import { ReviewDiff } from './components/review-diff.js';
 import { REPORT_STYLE } from './report-style.generated.js';
+import type { HighlightedDiffLines } from './syntax-highlighter.js';
 
 type ReviewReportProps = {
   context: ReviewRenderContext;
+  files: ParsedDiffFile[];
+  highlightedLines: HighlightedDiffLines;
 };
 
-export function ReviewReport({ context }: ReviewReportProps): VNode {
-  const parsedDiff = parseUnifiedDiff(context.filtered.diff);
+export function ReviewReport({ context, files, highlightedLines }: ReviewReportProps): VNode {
   const title = `Codivew - ${context.request.repository} - ${context.reviewId}`;
 
   return (
@@ -30,8 +32,12 @@ export function ReviewReport({ context }: ReviewReportProps): VNode {
         <main class="mx-auto max-w-[1180px] px-6 pt-8 pb-20 max-[700px]:px-3 max-[700px]:pt-3 max-[700px]:pb-10 print:max-w-none print:p-0">
           <ReportHeader context={context} />
           <ReportOverview context={context} />
-          <IssueSections issues={context.result.issues} files={parsedDiff} />
-          <ReviewDiff files={parsedDiff} issues={context.result.issues} />
+          <IssueSections issues={context.result.issues} files={files} />
+          <ReviewDiff
+            files={files}
+            issues={context.result.issues}
+            highlightedLines={highlightedLines}
+          />
           <ReportFooter context={context} />
         </main>
       </body>
