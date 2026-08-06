@@ -1,7 +1,9 @@
 import type { VNode } from 'preact';
+import type { ThemedTokenWithVariants } from 'shiki';
 import { t } from '../../config/language.js';
 import type { ReviewIssue } from '../../reviews/types/review-result.js';
 import type { ParsedDiffFile, ParsedDiffLine } from '../../reviews/unified-diff.js';
+import type { HighlightedDiffLines } from '../syntax-highlighter.js';
 import { lineTarget, samePath, severityLabel } from './issue-sections.js';
 import { Empty, SectionHeader, SURFACE_CLASSES } from './report-ui.js';
 
@@ -20,9 +22,11 @@ const DIFF_GUTTER_CLASSES = {
 export function ReviewDiff({
   files,
   issues,
+  highlightedLines,
 }: {
   files: ParsedDiffFile[];
   issues: ReviewIssue[];
+  highlightedLines: HighlightedDiffLines;
 }): VNode {
   return (
     <section id="changed-code" class="scroll-mt-5">
@@ -31,12 +35,20 @@ export function ReviewDiff({
         title={t('report.changedCode')}
         description={t('report.changedCodeDescription', { count: files.length })}
       />
-      <Diff files={files} issues={issues} />
+      <Diff files={files} issues={issues} highlightedLines={highlightedLines} />
     </section>
   );
 }
 
-function Diff({ files, issues }: { files: ParsedDiffFile[]; issues: ReviewIssue[] }): VNode {
+function Diff({
+  files,
+  issues,
+  highlightedLines,
+}: {
+  files: ParsedDiffFile[];
+  issues: ReviewIssue[];
+  highlightedLines: HighlightedDiffLines;
+}): VNode {
   if (files.length === 0) return <Empty>{t('report.noDiff')}</Empty>;
 
   return (
@@ -47,6 +59,7 @@ function Diff({ files, issues }: { files: ParsedDiffFile[]; issues: ReviewIssue[
           file={file}
           fileIndex={fileIndex}
           issues={issues}
+          highlightedLines={highlightedLines}
         />
       ))}
     </>
@@ -57,10 +70,12 @@ function DiffFile({
   file,
   fileIndex,
   issues,
+  highlightedLines,
 }: {
   file: ParsedDiffFile;
   fileIndex: number;
   issues: ReviewIssue[];
+  highlightedLines: HighlightedDiffLines;
 }): VNode {
   const fileIssues = issues.filter((issue) => samePath(issue.file, file.path));
   const displayedLineCount = file.hunks.reduce((count, hunk) => count + hunk.lines.length, 0);
@@ -132,6 +147,7 @@ function DiffFile({
                       fileIndex={fileIndex}
                       fileIssues={fileIssues}
                       allIssues={issues}
+                      highlightedTokens={highlightedLines.get(line)}
                     />
                   ))}
                 </>
@@ -153,11 +169,13 @@ function DiffLine({
   fileIndex,
   fileIssues,
   allIssues,
+  highlightedTokens,
 }: {
   line: ParsedDiffLine;
   fileIndex: number;
   fileIssues: ReviewIssue[];
   allIssues: ReviewIssue[];
+  highlightedTokens?: ThemedTokenWithVariants[];
 }): VNode {
   if (line.kind === 'marker') {
     return (
@@ -188,7 +206,27 @@ function DiffLine({
           {sign}
         </td>
         <td class="code-line overflow-visible px-4 py-[2px] whitespace-pre">
-          {line.content || ' '}
+          {highlightedTokens === undefined || highlightedTokens.length === 0
+            ? line.content || ' '
+            : highlightedTokens.map((token, index) => {
+                const light = token.variants.light;
+                const dark = token.variants.dark;
+                const fontStyle = light?.fontStyle ?? dark?.fontStyle ?? 0;
+                const style = [
+                  `--shiki-light:${light?.color ?? 'inherit'}`,
+                  `--shiki-dark:${dark?.color ?? light?.color ?? 'inherit'}`,
+                  fontStyle & 1 ? 'font-style:italic' : '',
+                  fontStyle & 2 ? 'font-weight:700' : '',
+                  fontStyle & 4 ? 'text-decoration:underline' : '',
+                ]
+                  .filter(Boolean)
+                  .join(';');
+                return (
+                  <span class="syntax-token" style={style} key={`${token.offset}-${index}`}>
+                    {token.content}
+                  </span>
+                );
+              })}
         </td>
       </tr>
       {attached.length === 0 ? null : (

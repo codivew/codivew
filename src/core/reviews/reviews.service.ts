@@ -73,7 +73,7 @@ export class ReviewsService {
       filtered,
       result,
     };
-    const html = this.renderer.render(context);
+    const html = await this.renderer.render(context);
     const locale = request.locale ?? getLanguage();
     const jsonRequest: Omit<ReviewRequest, 'diff'> = {
       repository: request.repository,

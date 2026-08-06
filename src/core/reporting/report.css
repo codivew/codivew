@@ -48,6 +48,10 @@ html body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+.syntax-token {
+  color: var(--shiki-light);
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #0c111d;
@@ -77,6 +81,10 @@ html body {
     --hunk-bg: #202945;
     --shadow: 0 1px 2px rgb(0 0 0 / 20%), 0 1px 3px rgb(0 0 0 / 28%);
     --shadow-lg: 0 16px 40px rgb(0 0 0 / 28%);
+  }
+
+  .syntax-token {
+    color: var(--shiki-dark);
   }
 }
 
@@ -109,6 +117,11 @@ body.vscode-high-contrast {
   --hunk-bg: #202945;
   --shadow: 0 1px 2px rgb(0 0 0 / 20%), 0 1px 3px rgb(0 0 0 / 28%);
   --shadow-lg: 0 16px 40px rgb(0 0 0 / 28%);
+}
+
+body.vscode-dark .syntax-token,
+body.vscode-high-contrast .syntax-token {
+  color: var(--shiki-dark);
 }
 
 @media print {
