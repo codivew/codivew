@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { getUserConfigPath, loadUserConfig, saveUserConfig } from './user-config.js';
@@ -18,15 +18,36 @@ describe('user config', () => {
 
   it('saves and loads normalized configuration', async () => {
     await saveUserConfig(
-      { ollamaUrl: 'http://localhost:11434/', model: 'qwen', language: 'en' },
+      {
+        apiUrl: 'https://api.example.com/v1/',
+        model: 'qwen',
+        language: 'en',
+        authentication: { type: 'api-key', apiKey: 'secret' },
+      },
       configPath,
     );
     await expect(loadUserConfig(configPath)).resolves.toEqual({
-      ollamaUrl: 'http://localhost:11434',
+      apiUrl: 'https://api.example.com/v1',
       model: 'qwen',
       language: 'en',
+      authentication: { type: 'api-key', apiKey: 'secret' },
     });
-    expect(await readFile(configPath, 'utf8')).toContain('"ollamaUrl"');
+    expect(await readFile(configPath, 'utf8')).toContain('"apiUrl"');
+  });
+
+  it('migrates an Ollama configuration to its OpenAI-compatible endpoint', async () => {
+    await mkdir(join(directory, 'nested'));
+    await writeFile(
+      configPath,
+      JSON.stringify({ ollamaUrl: 'http://localhost:11434', model: 'qwen', language: 'ko-KR' }),
+      'utf8',
+    );
+    await expect(loadUserConfig(configPath)).resolves.toEqual({
+      apiUrl: 'http://localhost:11434/v1',
+      model: 'qwen',
+      language: 'ko-KR',
+      authentication: { type: 'none' },
+    });
   });
 
   it('returns undefined when the file does not exist', async () => {

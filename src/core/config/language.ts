@@ -37,8 +37,8 @@ export const MESSAGES = {
     en: 'Language must be ko-KR or en.',
   },
   'config.urlInvalid': {
-    'ko-KR': 'Ollama URL은 http 또는 https 주소여야 합니다.',
-    en: 'The Ollama URL must use http or https.',
+    'ko-KR': 'API URL은 http 또는 https 주소여야 합니다.',
+    en: 'The API URL must use http or https.',
   },
   'config.readFailed': {
     'ko-KR': '설정 파일을 읽을 수 없습니다: {path}',
@@ -70,24 +70,39 @@ export const MESSAGES = {
     en: 'ko-KR 또는 en을 입력하세요. / Enter ko-KR or en.',
   },
   'setup.saved': { 'ko-KR': '설정을 저장했습니다.', en: 'Configuration saved.' },
-  'setup.ollamaCheckFailed': {
-    'ko-KR': 'Ollama 연결 확인에 실패했습니다. (HTTP {status})',
-    en: 'Failed to check the Ollama connection. (HTTP {status})',
+  'setup.apiCheckFailed': {
+    'ko-KR': 'OpenAI-compatible API 연결 확인에 실패했습니다. (HTTP {status})',
+    en: 'Failed to check the OpenAI-compatible API connection. (HTTP {status})',
   },
   'setup.connectionTimeout': {
     'ko-KR': '연결 시간이 초과되었습니다.',
     en: 'The connection timed out.',
   },
   'setup.connectionFailed': { 'ko-KR': '연결할 수 없습니다.', en: 'Unable to connect.' },
-  'setup.ollamaError': { 'ko-KR': 'Ollama에 {reason}', en: 'Ollama: {reason}' },
-  'setup.checkingOllama': {
-    'ko-KR': 'Ollama 연결 확인 중...',
-    en: 'Checking the Ollama connection...',
+  'setup.apiError': { 'ko-KR': 'API에 {reason}', en: 'API: {reason}' },
+  'setup.checkingApi': {
+    'ko-KR': 'OpenAI-compatible API 연결 확인 중...',
+    en: 'Checking the OpenAI-compatible API connection...',
   },
   'setup.noModels': {
-    'ko-KR': '설치된 모델이 없습니다. 먼저 {command}을 실행하세요.',
-    en: 'No models are installed. Run {command} first.',
+    'ko-KR': 'API가 사용 가능한 모델을 반환하지 않았습니다.',
+    en: 'The API did not return any available models.',
   },
+  'setup.authentication': { 'ko-KR': '인증 방식', en: 'Authentication' },
+  'setup.authenticationMenu': {
+    'ko-KR': '  1. 인증 없음\n  2. API Key (Bearer)\n  3. Basic Authentication',
+    en: '  1. None\n  2. API Key (Bearer)\n  3. Basic Authentication',
+  },
+  'setup.authInvalid': {
+    'ko-KR': '1, 2, 3 중 하나를 선택하세요.',
+    en: 'Choose 1, 2, or 3.',
+  },
+  'setup.apiKey': { 'ko-KR': 'API Key', en: 'API Key' },
+  'setup.basicUsername': { 'ko-KR': '사용자명', en: 'Username' },
+  'setup.basicPassword': { 'ko-KR': '비밀번호', en: 'Password' },
+  'setup.keepExisting': { 'ko-KR': '(Enter: 기존 값 유지)', en: '(Enter: keep current)' },
+  'setup.valueRequired': { 'ko-KR': '값을 입력하세요.', en: 'Enter a value.' },
+  'setup.apiUrl': { 'ko-KR': 'OpenAI-compatible API URL', en: 'OpenAI-compatible API URL' },
   'setup.connected': { 'ko-KR': '연결됨', en: 'Connected' },
   'setup.modelCount': { 'ko-KR': '모델 {count}개', en: 'Models: {count}' },
   'setup.retryUrl': { 'ko-KR': 'URL을 다시 입력하세요.', en: 'Enter the URL again.' },
@@ -118,21 +133,21 @@ export const MESSAGES = {
     'ko-KR': '브라우저를 실행할 수 없습니다.',
     en: 'Unable to open the browser.',
   },
-  'ollama.requestFailed': {
-    'ko-KR': 'Ollama 요청에 실패했습니다. (HTTP {status})',
-    en: 'The Ollama request failed. (HTTP {status})',
+  'provider.requestFailed': {
+    'ko-KR': 'AI API 요청에 실패했습니다. (HTTP {status})',
+    en: 'The AI API request failed. (HTTP {status})',
   },
-  'ollama.timeout': {
-    'ko-KR': 'Ollama 응답 시간이 {timeout}ms를 초과했습니다.',
-    en: 'The Ollama response exceeded {timeout}ms.',
+  'provider.timeout': {
+    'ko-KR': 'AI API 응답 시간이 {timeout}ms를 초과했습니다.',
+    en: 'The AI API response exceeded {timeout}ms.',
   },
-  'ollama.connectFailed': {
-    'ko-KR': 'Ollama에 연결할 수 없습니다: {url}',
-    en: 'Unable to connect to Ollama: {url}',
+  'provider.connectFailed': {
+    'ko-KR': 'AI API에 연결할 수 없습니다: {url}',
+    en: 'Unable to connect to the AI API: {url}',
   },
-  'ollama.invalidJson': {
-    'ko-KR': 'Ollama가 올바른 JSON 리뷰 결과를 반환하지 않았습니다.',
-    en: 'Ollama did not return a valid JSON review result.',
+  'provider.invalidJson': {
+    'ko-KR': 'AI API가 올바른 JSON 리뷰 결과를 반환하지 않았습니다.',
+    en: 'The AI API did not return a valid JSON review result.',
   },
   'review.emptyDiff': {
     'ko-KR': '리뷰할 수 있는 Diff가 없습니다.',
@@ -277,9 +292,9 @@ Filtered diff:
 Codivew Engine으로 로컬 Git diff를 리뷰하고 HTML 또는 JSON 리포트를 생성합니다.
 
 {commandsHeading}
-  setup                 언어, Ollama 연결과 모델을 대화형으로 설정
+  setup                 언어, API 연결, 인증과 모델을 대화형으로 설정
   config show           저장된 사용자 설정 표시
-  config set <key> <v>  ollama-url, model 또는 language 설정
+  config set <key> <v>  api-url, model 또는 language 설정
 
 {modesHeading}
   working               작업 트리 변경사항 리뷰 (기본값)
@@ -293,7 +308,7 @@ Codivew Engine으로 로컬 Git diff를 리뷰하고 HTML 또는 JSON 리포트�
       --format <format>  html, json, both 중 선택 (기본값: html)
       --no-open          브라우저를 열지 않기
       --no-update-notifier 업데이트 알림을 이번 실행에서 끄기
-      --ollama-url <url> 이번 실행에서 사용할 Ollama URL
+      --api-url <url>    이번 실행에서 사용할 OpenAI-compatible API URL
       --model <name>     이번 실행에서 사용할 모델
   -h, --help             도움말 표시
   -v, --version          버전 표시
@@ -304,9 +319,9 @@ Codivew Engine으로 로컬 Git diff를 리뷰하고 HTML 또는 JSON 리포트�
 Review local Git changes with Codivew Engine and generate HTML or JSON reports.
 
 {commandsHeading}
-  setup                 Configure language, Ollama, and model interactively
+  setup                 Configure language, API, authentication, and model interactively
   config show           Show the saved configuration
-  config set <key> <v>  Set ollama-url, model, or language
+  config set <key> <v>  Set api-url, model, or language
 
 {modesHeading}
   working               Review working tree changes (default)
@@ -320,7 +335,7 @@ Review local Git changes with Codivew Engine and generate HTML or JSON reports.
       --format <format>  html, json, or both (default: html)
       --no-open          Do not open the HTML report in a browser
       --no-update-notifier Disable the update notification for this run
-      --ollama-url <url> Ollama URL for this run
+      --api-url <url>    OpenAI-compatible API URL for this run
       --model <name>     Model for this run
   -h, --help             Show help
   -v, --version          Show version

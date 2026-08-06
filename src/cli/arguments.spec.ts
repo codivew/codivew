@@ -31,8 +31,8 @@ describe('parseArguments', () => {
         '--format',
         'both',
         '--no-open',
-        '--ollama-url',
-        'http://ollama.test:11434',
+        '--api-url',
+        'https://api.example.com/v1',
         '--model',
         'qwen',
       ]),
@@ -43,7 +43,7 @@ describe('parseArguments', () => {
         baseBranch: 'develop',
         output: 'review.html',
         format: 'both',
-        ollamaUrl: 'http://ollama.test:11434',
+        apiUrl: 'https://api.example.com/v1',
         model: 'qwen',
         openReport: false,
         projectContext: ['NestJS', 'Redis 없음'],
@@ -55,13 +55,20 @@ describe('parseArguments', () => {
     [['setup'], { kind: 'setup' }],
     [['config', 'show'], { kind: 'config-show' }],
     [
-      ['config', 'set', 'ollama-url', 'http://localhost:11434'],
-      { kind: 'config-set', key: 'ollama-url', value: 'http://localhost:11434' },
+      ['config', 'set', 'api-url', 'https://api.example.com/v1'],
+      { kind: 'config-set', key: 'api-url', value: 'https://api.example.com/v1' },
     ],
     [['config', 'set', 'model', 'qwen'], { kind: 'config-set', key: 'model', value: 'qwen' }],
     [['config', 'set', 'language', 'en'], { kind: 'config-set', key: 'language', value: 'en' }],
   ])('parses configuration command %j', (args, expected) => {
     expect(parseArguments(args)).toEqual(expected);
+  });
+
+  it('accepts --ollama-url as a backwards-compatible API URL alias', () => {
+    expect(parseArguments(['--ollama-url', 'http://localhost:11434'])).toMatchObject({
+      kind: 'run',
+      options: { apiUrl: 'http://localhost:11434/v1' },
+    });
   });
 
   it('rejects unknown arguments', () => {

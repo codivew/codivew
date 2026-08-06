@@ -6,7 +6,7 @@ English | [한국어](./docs/README.ko.md)
 [![npm downloads](https://img.shields.io/npm/dm/codivew.svg)](https://www.npmjs.com/package/codivew)
 [![license](https://img.shields.io/npm/l/codivew.svg)](https://github.com/knsan189/codivew/blob/main/LICENSE)
 
-Codivew reviews Git changes with an Ollama coding model and generates standalone HTML or machine-readable JSON reports. It runs locally without a separate server or database.
+Codivew reviews Git changes through an OpenAI-compatible API and generates standalone HTML or machine-readable JSON reports. It runs without a separate Codivew server or database.
 
 ## Features
 
@@ -20,9 +20,9 @@ Codivew reviews Git changes with an Ollama coding model and generates standalone
 
 - Node.js 18 or later
 - Git
-- Ollama available locally or over the network
+- An OpenAI-compatible API with model listing and chat completion endpoints
 
-Pull a coding model before starting a review:
+Local Ollama works through its OpenAI-compatible endpoint. Pull a model before using it:
 
 ```bash
 ollama pull qwen3.6:35b-a3b-coding-mxfp8
@@ -35,7 +35,9 @@ npm install -g codivew
 codivew setup
 ```
 
-`setup` lets you choose `ko-KR` or `en`, then connects to Ollama and saves the language, URL, and model. Korean is the default. Selecting English switches CLI messages, generated review feedback, and HTML report labels to English. If no configuration exists, Codivew starts setup automatically before the first interactive review.
+`setup` lets you choose `ko-KR` or `en`, an authentication method (`None`, API Key/Bearer, or Basic Authentication), the API URL, and a model returned by `GET /v1/models`. Reviews use `POST /v1/chat/completions`. The local Ollama default is `http://localhost:11434/v1` with no authentication.
+
+Run `codivew setup` again at any time to change the endpoint or authentication. Credentials are entered without terminal echo, stored only in the user configuration file with owner-only permissions, and never displayed by `config show`.
 
 Change the saved language without running setup again:
 
@@ -77,11 +79,11 @@ codivew staged \
   --context "Must support Node.js 18 or later"
 ```
 
-Use a different Ollama server or model for one review:
+Use a different OpenAI-compatible endpoint or model for one review. Saved authentication is still used:
 
 ```bash
 codivew staged \
-  --ollama-url http://ollama.example.com:11434 \
+  --api-url https://api.example.com/v1 \
   --model qwen3.6:35b-a3b-coding-mxfp8
 ```
 

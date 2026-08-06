@@ -1,16 +1,17 @@
 import { hasConfiguredRuntimeConfig, resolveRuntimeConfig } from './runtime-config.js';
 
-const options: { ollamaUrl?: string; model?: string } = {};
+const options: { apiUrl?: string; model?: string } = {};
 
 describe('runtime config', () => {
   it('applies CLI, user and default precedence', () => {
     const runtime = resolveRuntimeConfig(
-      { ...options, ollamaUrl: 'http://cli.test:11434' },
-      { ollamaUrl: 'http://user.test:11434', model: 'user-model' },
+      { ...options, apiUrl: 'http://cli.test/v1' },
+      { apiUrl: 'http://user.test/v1', model: 'user-model' },
     );
     expect(runtime).toMatchObject({
-      ollamaUrl: 'http://cli.test:11434',
+      apiUrl: 'http://cli.test/v1',
       model: 'user-model',
+      authentication: { type: 'none' },
       timeoutMs: 600_000,
       maxDiffChars: 120_000,
     });
@@ -18,7 +19,7 @@ describe('runtime config', () => {
 
   it('uses defaults after all configurable sources', () => {
     expect(resolveRuntimeConfig(options)).toMatchObject({
-      ollamaUrl: 'http://localhost:11434',
+      apiUrl: 'http://localhost:11434/v1',
       model: 'qwen3.6:35b-a3b-coding-mxfp8',
     });
   });
@@ -26,7 +27,7 @@ describe('runtime config', () => {
   it('recognizes a complete configuration assembled from different sources', () => {
     expect(
       hasConfiguredRuntimeConfig(
-        { ...options, ollamaUrl: 'http://cli.test:11434' },
+        { ...options, apiUrl: 'http://cli.test/v1' },
         { model: 'user-model' },
       ),
     ).toBe(true);

@@ -2,7 +2,7 @@ import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { z } from 'zod';
-import { ERROR_CODES, ReviewError } from '../core/index.js';
+import { ERROR_CODES, ReviewError, type Authentication } from '../core/index.js';
 import { SUPPORTED_LANGUAGES, t } from './language.js';
 
 const httpUrl = z
@@ -16,7 +16,24 @@ const httpUrl = z
   )
   .transform((value) => value.replace(/\/$/, ''));
 
+const authenticationSchema: z.ZodType<Authentication> = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('none') }).strict(),
+  z.object({ type: z.literal('api-key'), apiKey: z.string().min(1) }).strict(),
+  z
+    .object({ type: z.literal('basic'), username: z.string().min(1), password: z.string().min(1) })
+    .strict(),
+]);
+
 export const userConfigSchema = z
+  .object({
+    apiUrl: httpUrl.optional(),
+    model: z.string().trim().min(1).optional(),
+    language: z.enum(SUPPORTED_LANGUAGES).optional(),
+    authentication: authenticationSchema.optional(),
+  })
+  .strict();
+
+const legacyUserConfigSchema = z
   .object({
     ollamaUrl: httpUrl.optional(),
     model: z.string().trim().min(1).optional(),
@@ -55,7 +72,16 @@ export async function loadUserConfig(
   }
 
   try {
-    return userConfigSchema.parse(JSON.parse(contents) as unknown);
+    const input = JSON.parse(contents) as unknown;
+    const current = userConfigSchema.safeParse(input);
+    if (current.success) return current.data;
+    const legacy = legacyUserConfigSchema.parse(input);
+    return {
+      ...(legacy.ollamaUrl === undefined ? {} : { apiUrl: migrateLegacyApiUrl(legacy.ollamaUrl) }),
+      ...(legacy.model === undefined ? {} : { model: legacy.model }),
+      ...(legacy.language === undefined ? {} : { language: legacy.language }),
+      authentication: { type: 'none' },
+    };
   } catch (error) {
     throw new ReviewError(
       ERROR_CODES.CONFIG_INVALID,
@@ -89,8 +115,13 @@ export async function saveUserConfig(
   }
 }
 
-export function parseOllamaUrl(value: string): string {
+export function parseApiUrl(value: string): string {
   return httpUrl.parse(value);
+}
+
+function migrateLegacyApiUrl(value: string): string {
+  const normalized = value.replace(/\/+$/, '');
+  return normalized.endsWith('/v1') ? normalized : `${normalized}/v1`;
 }
 
 function isNodeError(error: unknown): error is NodeJS.ErrnoException {

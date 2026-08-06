@@ -4,7 +4,7 @@ import { ERROR_CODES } from '../common/constants/error-codes.js';
 import { ReviewError } from '../common/errors/review-error.js';
 import { getLanguage, t, type Language } from '../config/language.js';
 import { DiffFilterService } from './diff-filter.service.js';
-import { OllamaService } from './ollama.service.js';
+import { OpenAICompatibleService } from './openai-compatible.service.js';
 import { ReviewPromptService } from './review-prompt.service.js';
 import { parseReviewResult } from './schemas/review-result.schema.js';
 import type { ReviewResult } from './types/review-result.js';
@@ -42,7 +42,7 @@ export class ReviewsService {
     private readonly maxDiffChars: number,
     private readonly diffFilter: DiffFilterService,
     private readonly prompt: ReviewPromptService,
-    private readonly ollama: OllamaService,
+    private readonly modelClient: OpenAICompatibleService,
     private readonly renderer: ReviewRenderer,
   ) {}
 
@@ -68,7 +68,7 @@ export class ReviewsService {
       reviewId,
       createdAt,
       elapsedMs,
-      model: this.ollama.model,
+      model: this.modelClient.model,
       request,
       filtered,
       result,
@@ -88,7 +88,7 @@ export class ReviewsService {
       reviewId,
       createdAt: createdAt.toISOString(),
       elapsedMs,
-      model: this.ollama.model,
+      model: this.modelClient.model,
       language: locale,
       request: jsonRequest,
       files: {
@@ -115,11 +115,11 @@ export class ReviewsService {
     filtered: ReturnType<DiffFilterService['filter']>,
   ): Promise<ReviewResult> {
     try {
-      const response = await this.ollama.generateReview(this.prompt.build(request, filtered));
+      const response = await this.modelClient.generateReview(this.prompt.build(request, filtered));
       return parseReviewResult(response, filtered.reviewedFiles, filtered.diff);
     } catch (error) {
       if (!this.isModelInvalid(error)) throw error;
-      const response = await this.ollama.generateReview(
+      const response = await this.modelClient.generateReview(
         this.prompt.buildRetry(request, filtered, this.validationReason(error)),
       );
       try {

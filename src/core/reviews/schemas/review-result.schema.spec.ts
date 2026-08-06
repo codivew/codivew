@@ -19,7 +19,7 @@ const valid = {
 };
 
 describe('reviewResultSchema', () => {
-  it('keeps Ollama format schema free of unsupported constraint keywords', () => {
+  it('keeps the provider response schema free of broadly unsupported constraint keywords', () => {
     const schema = JSON.stringify(reviewResultJsonSchema);
     expect(schema).not.toMatch(/"(?:minimum|maximum|minLength|maxLength|maxItems)"/);
   });
@@ -28,7 +28,7 @@ describe('reviewResultSchema', () => {
     expect(parseReviewResult(valid, ['src/app.ts']).issues).toHaveLength(1);
   });
 
-  it('requires a line in the Ollama response schema', () => {
+  it('requires a line in the provider response schema', () => {
     expect(reviewResultJsonSchema.properties.issues.items.required).toContain('line');
   });
 

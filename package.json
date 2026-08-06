@@ -3,11 +3,11 @@
   "version": "0.3.3",
   "private": false,
   "type": "module",
-  "description": "Codivew CLI for local AI code reviews powered by Ollama",
+  "description": "Codivew CLI for AI code reviews through OpenAI-compatible APIs",
   "keywords": [
     "code-review",
     "cli",
-    "ollama",
+    "openai-compatible",
     "ai",
     "git"
   ],

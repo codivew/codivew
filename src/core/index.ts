@@ -11,18 +11,23 @@ export {
 } from './config/language.js';
 export {
   DEFAULT_MAX_DIFF_CHARS,
-  DEFAULT_OLLAMA_MODEL,
-  DEFAULT_OLLAMA_TIMEOUT_MS,
-  DEFAULT_OLLAMA_URL,
+  DEFAULT_API_TIMEOUT_MS,
+  DEFAULT_API_URL,
+  DEFAULT_MODEL,
   hasConfiguredRuntimeConfig,
   resolveRuntimeConfig,
   type RuntimeConfig,
   type RuntimeConfigValues,
+  type Authentication,
 } from './config/runtime-config.js';
 export { createGitReviewInput, type GitReviewInput, type GitReviewOptions } from './git/git.js';
 export { HtmlRendererService } from './reporting/html-renderer.service.js';
 export { DiffFilterService } from './reviews/diff-filter.service.js';
-export { OllamaService, type OllamaOptions } from './reviews/ollama.service.js';
+export {
+  authenticationHeaders,
+  OpenAICompatibleService,
+  type OpenAICompatibleOptions,
+} from './reviews/openai-compatible.service.js';
 export { ReviewPromptService } from './reviews/review-prompt.service.js';
 export {
   ReviewsService,
