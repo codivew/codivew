@@ -16,7 +16,7 @@ import {
   ERROR_CODES,
   hasConfiguredRuntimeConfig,
   HtmlRendererService,
-  OllamaService,
+  OpenAICompatibleService,
   resolveRuntimeConfig,
   ReviewError,
   ReviewMode,
@@ -67,7 +67,7 @@ async function main(): Promise<void> {
     diff: gitInput.diff,
   };
 
-  printInput(request, runtime.ollamaUrl, runtime.model, command.options.format);
+  printInput(request, runtime.apiUrl, runtime.model, command.options.format);
   const stopProgress = startProgress();
   let generated: Awaited<ReturnType<ReviewsService['createReview']>>;
   try {
@@ -75,9 +75,10 @@ async function main(): Promise<void> {
       runtime.maxDiffChars,
       new DiffFilterService(),
       new ReviewPromptService(),
-      new OllamaService({
-        baseUrl: runtime.ollamaUrl,
+      new OpenAICompatibleService({
+        baseUrl: runtime.apiUrl,
         model: runtime.model,
+        authentication: runtime.authentication,
         timeoutMs: runtime.timeoutMs,
       }),
       new HtmlRendererService(),
@@ -123,7 +124,7 @@ async function ensureUserConfig(
   options: Parameters<typeof hasConfiguredRuntimeConfig>[0],
   config: UserConfig | undefined,
 ): Promise<UserConfig | undefined> {
-  if (config?.ollamaUrl !== undefined && config.model !== undefined) return config;
+  if (config?.apiUrl !== undefined && config.model !== undefined) return config;
   if (hasConfiguredRuntimeConfig(options, config)) return config;
   if (process.stdin.isTTY && process.stdout.isTTY) return runSetup(config ?? {});
   throw new ReviewError(ERROR_CODES.CONFIG_REQUIRED, t('cli.configRequired'));
@@ -148,7 +149,7 @@ function printInput(
         : [`${style.gray('  Base branch   ')}${style.yellow(request.baseBranch)}`]),
       `${style.gray('  Changed files ')}${style.cyan(`${changedFiles}`)}`,
       `${style.gray('  Diff size     ')}${style.blue(`${Buffer.byteLength(request.diff, 'utf8')} bytes`)}`,
-      `${style.gray('  Ollama        ')}${style.blue(baseUrl)}`,
+      `${style.gray('  API           ')}${style.blue(baseUrl)}`,
       `${style.gray('  Model         ')}${style.magenta(model)}`,
       `${style.gray('  Output        ')}${style.green(outputFormatLabel(format))}`,
       style.gray('────────────────────────────────────────'),

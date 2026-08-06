@@ -35,24 +35,28 @@ describe('runReview', () => {
       ok: true,
       json: () =>
         Promise.resolve({
-          message: {
-            content: JSON.stringify({
-              verdict: 'comment',
-              risk: 'low',
-              summary: '변경값을 확인하세요.',
-              issues: [
-                {
-                  severity: 'suggestion',
-                  confidence: 0.9,
-                  file: 'value.ts',
-                  line: 1,
-                  title: '값 변경 확인',
-                  description: '의도한 값인지 확인하세요.',
-                },
-              ],
-              tests: [],
-            }),
-          },
+          choices: [
+            {
+              message: {
+                content: JSON.stringify({
+                  verdict: 'comment',
+                  risk: 'low',
+                  summary: '변경값을 확인하세요.',
+                  issues: [
+                    {
+                      severity: 'suggestion',
+                      confidence: 0.9,
+                      file: 'value.ts',
+                      line: 1,
+                      title: '값 변경 확인',
+                      description: '의도한 값인지 확인하세요.',
+                    },
+                  ],
+                  tests: [],
+                }),
+              },
+            },
+          ],
         }),
     } as Response);
 

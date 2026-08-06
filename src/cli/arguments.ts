@@ -6,7 +6,7 @@ export type CliOptions = {
   baseBranch: string;
   output?: string;
   format: OutputFormat;
-  ollamaUrl?: string;
+  apiUrl?: string;
   model?: string;
   openReport: boolean;
   projectContext: string[];
@@ -14,7 +14,7 @@ export type CliOptions = {
 
 export type OutputFormat = 'html' | 'json' | 'both';
 
-export type ConfigKey = 'ollama-url' | 'model' | 'language';
+export type ConfigKey = 'api-url' | 'ollama-url' | 'model' | 'language';
 
 export type CliCommand =
   | { kind: 'help' }
@@ -71,8 +71,9 @@ export function parseArguments(args: readonly string[]): CliCommand {
       options.format = format as OutputFormat;
       continue;
     }
-    if (argument === '--ollama-url') {
-      options.ollamaUrl = requiredValue(args, ++index, argument);
+    if (argument === '--api-url' || argument === '--ollama-url') {
+      const url = requiredValue(args, ++index, argument);
+      options.apiUrl = argument === '--ollama-url' ? legacyApiUrl(url) : url;
       continue;
     }
     if (argument === '--model') {
@@ -98,15 +99,20 @@ export function parseArguments(args: readonly string[]): CliCommand {
   return { kind: 'run', options };
 }
 
+function legacyApiUrl(value: string): string {
+  const normalized = value.replace(/\/+$/, '');
+  return normalized.endsWith('/v1') ? normalized : `${normalized}/v1`;
+}
+
 function parseConfigCommand(args: readonly string[]): CliCommand {
   if (args[1] === 'show') {
     assertArgumentCount(args, 2, 'Usage: codivew config show');
     return { kind: 'config-show' };
   }
   if (args[1] === 'set') {
-    assertArgumentCount(args, 4, 'Usage: codivew config set <ollama-url|model|language> <value>');
+    assertArgumentCount(args, 4, 'Usage: codivew config set <api-url|model|language> <value>');
     const key = args[2];
-    if (key !== 'ollama-url' && key !== 'model' && key !== 'language') {
+    if (key !== 'api-url' && key !== 'ollama-url' && key !== 'model' && key !== 'language') {
       throw new ReviewError(
         ERROR_CODES.INVALID_ARGUMENT,
         t('argument.unsupportedConfigKey', { key }),
@@ -116,7 +122,7 @@ function parseConfigCommand(args: readonly string[]): CliCommand {
   }
   throw new ReviewError(
     ERROR_CODES.INVALID_ARGUMENT,
-    'Usage: codivew config <show|set> [ollama-url|model|language] [value]',
+    'Usage: codivew config <show|set> [api-url|model|language] [value]',
   );
 }
 
